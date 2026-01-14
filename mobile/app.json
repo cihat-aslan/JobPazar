@@ -22,15 +22,24 @@
         "backgroundColor": "#2563eb"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jobpazar.mobile",
-      "usesCleartextTraffic": true
+      "package": "com.jobpazar.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
-        "projectId": "c229a43d-ccd0-43bb-97d7-7b0e8e29b4d7"
+        "projectId": "e89d3c6b-a7ca-46e6-b82b-a3ca089206fa"
       }
     }
   }

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useContext } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../services/api';
 import JobCard from '../components/JobCard';
@@ -131,6 +131,9 @@ export default function HomeScreen() {
             applyFilters(jobsData, searchTerm, selectedCategory, selectedBudget);
         } catch (error) {
             console.error('Error fetching data:', error);
+            // Debug: Show actual error to user
+            const errorMsg = error.response?.data || error.message || 'Bilinmeyen hata';
+            Alert.alert('API Hatası', `Bağlantı hatası: ${errorMsg}\n\nURL: ${error.config?.url || 'unknown'}`);
         } finally {
             setLoading(false);
             setRefreshing(false);
