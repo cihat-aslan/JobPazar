@@ -22,14 +22,15 @@
         "backgroundColor": "#2563eb"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jobpazar.mobile"
+      "package": "com.jobpazar.mobile",
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "9affd94a-0421-4ecd-a7e8-fa5ff260677a"
+        "projectId": "c229a43d-ccd0-43bb-97d7-7b0e8e29b4d7"
       }
     }
   }

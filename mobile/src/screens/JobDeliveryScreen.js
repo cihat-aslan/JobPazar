@@ -97,7 +97,6 @@ export default function JobDeliveryScreen({ route, navigation }) {
         setActionLoading(true);
         try {
             await api.post(`/jobs/revision/${jobId}`, { feedback: revisionNote });
-            await api.post(`/jobs/revision/${jobId}`, { feedback: revisionNote });
             Alert.alert('Başarılı', 'Revize talebi gönderildi.', [
                 {
                     text: 'Tamam',
