@@ -21,15 +21,23 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
-    @Value("${gemini.api.url}")
-    private String apiUrl;
+    @Value("${gemini.api.base}")
+    private String apiBase;
+
+    @Value("${gemini.api.version}")
+    private String apiVersion;
+
+    @Value("${gemini.api.model}")
+    private String apiModel;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
     @SuppressWarnings("unchecked")
     public String generateContent(String prompt) {
         try {
-            String url = apiUrl + apiKey;
+            // Build URL from components
+            String url = String.format("%s/%s/models/%s:generateContent?key=%s",
+                    apiBase, apiVersion, apiModel, apiKey);
 
             // Request Body
             Map<String, Object> part = new HashMap<>();
