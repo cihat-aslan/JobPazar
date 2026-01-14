@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - İlan Oluştur</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-back {
+            background-color: #64748b;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .create-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+            /* Let row handle gap */
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .btn-create {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .btn-create:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="container">
+        <div class="header">
+            <h2 class="section-title" style="margin:0">Yeni İlan Oluştur</h2>
+            <a href="index.html" class="btn-back">← Anasayfaya Dön</a>
+        </div>
+
+        <div class="create-card">
+            <div class="form-group">
+                <label>İlan Başlığı</label>
+                <input type="text" id="jobTitle" placeholder="Örn: Mobil Oyun Geliştirici">
+            </div>
+
+            <div class="form-group" style="position: relative;">
+                <label>Açıklama</label>
+                <textarea id="jobDesc" rows="12"
+                    placeholder="İşin detaylarını anlatın... VEYA sadece başlığı girip AI butonuna basın, sizin için yazalım!"
+                    style="padding-bottom: 50px; resize: vertical;"></textarea>
+                <button onclick="generateDescriptionWithAI()" type="button"
+                    style="position: absolute; bottom: 15px; right: 15px; width: auto !important; background: #8b5cf6; color: white; border: none; border-radius: 30px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3); transition: all 0.2s;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI ile Yaz
+                </button>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Kategori</label>
+                    <select id="jobCategory">
+                        <option value="Yazılım Geliştirme">Yazılım Geliştirme</option>
+                        <option value="Grafik Tasarım">Grafik Tasarım</option>
+                        <option value="Dijital Pazarlama">Dijital Pazarlama</option>
+                        <option value="Çeviri & İçerik">Çeviri & İçerik</option>
+                        <option value="Video & Animasyon">Video & Animasyon</option>
+                        <option value="Diğer">Diğer</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Bütçe Aralığı</label>
+                    <select id="jobBudget">
+                        <option value="Very Low">Çok Düşük (1 - 1.000 TL)</option>
+                        <option value="Low">Düşük (1.001 - 5.000 TL)</option>
+                        <option value="Medium">Orta (5.001 - 15.000 TL)</option>
+                        <option value="High">Yüksek (15.001 - 50.000 TL)</option>
+                        <option value="Very High">Çok Yüksek (50.000+ TL)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Tahmini Süre (Gün)</label>
+                    <input type="number" id="jobDuration" placeholder="Örn: 30" required min="1">
+                </div>
+            </div>
+
+            <button class="btn-create" onclick="createJob()">İlanı Yayınla</button>
+        </div>
+    </div>
+
+    <!-- UI Helpers -->
+    <script src="ui.js"></script>
+
+    <script>
+        const API_URL = '/api/jobs';
+
+        async function createJob() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                showToast("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+            const currentUser = JSON.parse(userStr);
+
+            const title = document.getElementById('jobTitle').value;
+            const description = document.getElementById('jobDesc').value;
+            const category = document.getElementById('jobCategory').value;
+            const budget = document.getElementById('jobBudget').value;
+            const duration = document.getElementById('jobDuration').value;
+
+            if (!title || !description) {
+                showToast("Lütfen başlık ve açıklama alanlarını doldurunuz.");
+                return;
+            }
+
+            const jobData = {
+                title,
+                description,
+                category,
+                budget,
+                duration: parseInt(duration || 0),
+            };
+
+            try {
+                // Dynamic Employer ID
+                const response = await fetch(`${API_URL}?employerId=${currentUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jobData)
+                });
+
+                if (response.ok) {
+                    showToast('İlan başarıyla yayınlandı! 🎉');
+                    setTimeout(() => window.location.href = 'index.html', 1500);
+                } else {
+                    showToast('Hata oluştu. Lütfen tekrar deneyin.');
+                }
+            } catch (error) {
+                console.error('Error creating job:', error);
+                showToast('Sunucu hatası.');
+            }
+        }
+
+        async function generateDescriptionWithAI() {
+            const title = document.getElementById('jobTitle').value;
+            const descField = document.getElementById('jobDesc');
+            const draft = descField.value;
+
+            if (!title && (!draft || draft.trim().length < 3)) {
+                showToast("⚠️ Lütfen en azından bir 'İlan Başlığı' girin, AI ona göre yazsın.");
+                document.getElementById('jobTitle').focus();
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="generateDescriptionWithAI()"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yazıyor...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/ai/generate-job-description', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: title,
+                        draft: draft
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Typing effect
+                    let i = 0;
+                    const resultText = data.response;
+                    descField.value = ""; // Clear existing to overwrite with refined version
+                    const interval = setInterval(() => {
+                        descField.value += resultText.charAt(i);
+                        descField.scrollTop = descField.scrollHeight; // Auto scroll
+                        i++;
+                        if (i >= resultText.length) clearInterval(interval);
+                    }, 5);
+                } else {
+                    const err = await response.json();
+                    showToast("Hata: " + (err.error || "AI yanıt veremedi."));
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Sunucu hatası.");
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobPazar - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-input:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <!-- New Navbar Structure -->
+        <nav class="navbar"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 30px;">
+                <a href="index.html" class="logo"
+                    style="text-decoration: none; font-size: 24px; font-weight: 800; color: #2563eb; font-family: 'Segoe UI', sans-serif; line-height: 1; display: flex; align-items: center;">JobPazar</a>
+
+                <div class="nav-links" style="display: flex; align-items: center;">
+                    <a href="about.html">Hakkımızda</a>
+                    <a href="contact.html">İletişim</a>
+                </div>
+            </div>
+
+            <div id="auth-section" style="display: flex; align-items: center; gap: 20px;">
+                <!-- Content injected by JS -->
+            </div>
+        </nav>
+
+        <!-- Header & Filters Area -->
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;">
+
+            <!-- Moved Add Job Button Here -->
+            <div id="action-buttons-container">
+                <!-- Will be populated by JS based on Auth -->
+            </div>
+
+            <!-- Search Input -->
+            <div style="display: flex; justify-content: center; flex: 1;">
+                <div style="position: relative; width: 100%; max-width: 400px;">
+                    <i class="fa-solid fa-magnifying-glass"
+                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b;"></i>
+                    <input type="text" id="searchInput" oninput="applyFilters()" placeholder="İlan ara..."
+                        class="search-input"
+                        style="width: 100%; padding: 12px 12px 12px 40px; border-radius: 8px; border: 1px solid #bfdbfe; color: #1e293b; outline: none; transition: all 0.2s; font-size: 15px;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <select id="filterCategory" onchange="applyFilters()"
+                    style="padding: 10px; border-radius: 8px; border: 1px solid #bfdbfe; color: #2563eb; background: #eff6ff; font-weight: 500; cursor: pointer;">
+                    <option value="">Tüm Kategoriler</option>
+                    <option value="Yazılım Geliştirme">Yazılım Geliştirme</option>
+                    <option value="Grafik Tasarım">Grafik Tasarım</option>
+                    <option value="Dijital Pazarlama">Dijital Pazarlama</option>
+                    <option value="Çeviri & İçerik">Çeviri & İçerik</option>
+                    <option value="Video & Animasyon">Video & Animasyon</option>
+                    <option value="Diğer">Diğer</option>
+                </select>
+
+                <select id="filterBudget" onchange="applyFilters()"
+                    style="padding: 10px; border-radius: 8px; border: 1px solid #bfdbfe; color: #2563eb; background: #eff6ff; font-weight: 500; cursor: pointer;">
+                    <option value="" style="color: #2563eb;">Tüm Bütçeler</option>
+                    <option value="Very Low" style="color: #166534; font-weight: 600;">Very Low</option>
+                    <option value="Low" style="color: #3f6212; font-weight: 600;">Low</option>
+                    <option value="Medium" style="color: #9a3412; font-weight: 600;">Medium</option>
+                    <option value="High" style="color: #991b1b; font-weight: 600;">High</option>
+                    <option value="Very High" style="color: #ef4444; font-weight: 600;">Very High</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <div id="jobs-container" class="card-grid">
+                <p style="color:#666; width:100%; text-align:center;">İlanlar yükleniyor...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="ui.js"></script>
+
+    <script>
+        const API_URL = '/api';
+        let currentUser = null;
+        let allJobs = [];
+        let appliedJobIds = new Set();
+
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            const authSection = document.getElementById('auth-section');
+            const actionContainer = document.getElementById('action-buttons-container');
+
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+
+                // Admin Redirect Check
+                if (currentUser.role === 'ADMIN') {
+                    window.location.href = 'admin_dashboard.html';
+                    return;
+                }
+
+                authSection.innerHTML = `
+                    <div class="dropdown">
+                        <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding: 5px;">
+                            <span style="color:#334155; font-weight:600; font-size:14px;">Merhaba, ${currentUser.username}</span>
+                            <div class="profile-icon">
+                                ${currentUser.username.charAt(0).toUpperCase()}
+                            </div>
+                        </div>
+                        <div class="dropdown-content">
+                            <a href="profile.html?section=info"><i class="fa-solid fa-user-pen"></i> Bilgilerim</a>
+                            <a href="profile.html?section=jobs"><i class="fa-solid fa-briefcase"></i> İlanlarım</a>
+                            <a href="profile.html?section=proposals"><i class="fa-solid fa-paper-plane"></i> Tekliflerim</a>
+                            <a href="profile.html?section=notifications"><i class="fa-solid fa-bell"></i> Bildirimler</a>
+                            <a href="#" onclick="logout()" style="color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</a>
+                        </div>
+                    </div>
+                `;
+
+                // Add "Create Job" button to the sub-header
+                actionContainer.innerHTML = `
+                    <a href="job_create.html" style="background:#2563eb; color:white; text-decoration:none; padding:10px 20px; border-radius:8px; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:5px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+                        + İlan Ekle
+                    </a>
+                `;
+
+            } else {
+                authSection.innerHTML = `
+                    <a href="app-release.apk" target="_blank" style="background:#2563eb; color:white; text-decoration:none; padding:8px 15px; border-radius:30px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:5px; margin-right: 15px;">
+                        <i class="fa-brands fa-android"></i> Uygulamayı İndir
+                    </a>
+                    <span style="color: #666; font-size: 14px;">Misafir Görünümü</span>
+                    <a href="login.html" style="text-decoration: none; color: #2563eb; font-weight: 600;">Giriş Yap</a>
+                    <a href="login.html" onclick="localStorage.setItem('openRegister', 'true')" style="text-decoration: none; color: #2563eb; font-weight: 600;">Üye Ol</a>
+                `;
+                actionContainer.innerHTML = `
+                    <div style="font-weight:700; font-size:18px; color:#334155;">Açık İş İlanları</div>
+                `;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+
+        async function loadJobs() {
+            try {
+                const response = await fetch(`${API_URL}/jobs`);
+                allJobs = await response.json();
+
+                // Reset global set
+                appliedJobIds = new Set();
+
+                if (currentUser) {
+                    try {
+                        const propResponse = await fetch(`${API_URL}/proposals/my-proposals?freelancerId=${currentUser.id}`);
+                        if (propResponse.ok) {
+                            const myProposals = await propResponse.json();
+                            // Ensure we handle p.job being present and convert ID to Number for safety
+                            myProposals.forEach(p => {
+                                if (p.job && p.job.id) {
+                                    appliedJobIds.add(Number(p.job.id));
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Error loading user proposals:", e);
+                    }
+                }
+
+                console.log("Applied Jobs:", Array.from(appliedJobIds)); // Debug log
+                renderJobs(allJobs, appliedJobIds);
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+            }
+        }
+
+        function getBudgetBadgeClass(budget) {
+            switch (budget) {
+                case 'Very Low': case 'Çok Düşük': return 'badge-very-low';
+                case 'Low': case 'Düşük': return 'badge-low';
+                case 'Medium': case 'Orta': return 'badge-medium';
+                case 'High': case 'Yüksek': return 'badge-high';
+                case 'Very High': case 'Çok Yüksek': return 'badge-very-high';
+                default: return 'badge-medium';
+            }
+        }
+
+        function renderJobs(jobs, appliedIds = new Set()) {
+            const container = document.getElementById('jobs-container');
+            container.innerHTML = '';
+
+            if (jobs.length === 0) {
+                container.innerHTML = '<p style="color:#666; width:100%; text-align:center;">İlan bulunamadı.</p>';
+                return;
+            }
+
+            jobs.forEach(job => {
+                const budgetClass = getBudgetBadgeClass(job.budget);
+                // Category uses the old blue style (e3f2fd/1976d2)
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.justifyContent = 'space-between';
+
+                card.innerHTML = `
+                    <div onclick="window.location.href='job_detail.html?id=${job.id}&from=home'" style="cursor:pointer; height:100%;">
+                        <div style="display:flex; justify-content:space-between; align-items:start;">
+                            <h3 style="margin-top:0; color:#333;">${job.title}</h3>
+                            <span class="${budgetClass}" style="padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">${job.budget}</span>
+                        </div>
+                        
+                        <div style="margin: 5px 0 10px 0;">
+                            <span style="font-size:12px; background:#e3f2fd; color:#1976d2; padding:2px 6px; border-radius:4px; font-weight:500;">
+                                ${job.category || 'Genel'}
+                            </span>
+                        </div>
+
+                        <p style="color:#666; line-height:1.5; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; margin-top:5px;">
+                            ${job.description}
+                        </p>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto; padding-top:15px; border-top:1px solid #f1f5f9;">
+                            <small style="color:#94a3b8;">İşveren: ${job.employer?.username || 'Anonim'}</small>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                ${appliedIds.has(Number(job.id)) ? '<span style="font-size:12px; background:#22c55e; color:white; padding:4px 8px; border-radius:4px; font-weight:600; display:flex; align-items:center; gap:4px;">✅ Teklif Verildi</span>' : ''}
+                                ${job.duration ? `<small style="color:#64748b; font-weight:500;">⏳ ${job.duration} Gün</small>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function applyFilters() {
+            const category = document.getElementById('filterCategory').value;
+            const budget = document.getElementById('filterBudget').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            const filtered = allJobs.filter(job => {
+                const matchCat = category ? (job.category === category) : true;
+                const matchBud = budget ? (job.budget === budget) : true;
+                const matchSearch = search ? (
+                    (job.title && job.title.toLowerCase().includes(search)) ||
+                    (job.description && job.description.toLowerCase().includes(search))
+                ) : true;
+
+                return matchCat && matchBud && matchSearch;
+            });
+
+            renderJobs(filtered, appliedJobIds);
+        }
+
+        checkAuth();
+        loadJobs();
+    </script>
+</body>
+
+</html>

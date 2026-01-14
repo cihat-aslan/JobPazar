@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - Kullanıcı Düzenle</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-back {
+            background-color: #64748b;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .edit-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .btn-save {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-save:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="container">
+        <div class="header">
+            <h2 class="section-title" style="margin:0">Kullanıcı Düzenle</h2>
+            <a href="admin_users.html" class="btn-back">← Listeye Dön</a>
+        </div>
+
+        <div class="edit-card">
+            <div class="form-group">
+                <label>Kullanıcı Adı</label>
+                <input type="text" id="username" disabled style="background-color: #f1f5f9; cursor: not-allowed;">
+                <small style="color:#94a3b8">Kullanıcı adı değiştirilemez.</small>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email">
+            </div>
+
+            <div class="form-group">
+                <label>AI Açıklama (Bio)</label>
+                <textarea id="bio" rows="5"
+                    style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; font-family: inherit; resize: vertical;"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Yeni Şifre</label>
+                <input type="password" id="password" placeholder="Boş bırakırsanız değişmez">
+            </div>
+
+            <button class="btn-save" onclick="saveUser()">Kaydet</button>
+        </div>
+    </div>
+
+    <script>
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        const API_URL = '/api/users'; // For getUser
+        const ADMIN_API_URL = '/api/admin/users'; // For update
+
+        // Get User ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('id');
+
+        let currentUsername = urlParams.get('username');
+        let currentEmail = urlParams.get('email');
+
+        async function loadUserDetails() {
+            try {
+                const response = await fetch(`${API_URL}/${userId}`);
+                if (response.ok) {
+                    const user = await response.json();
+                    document.getElementById('username').value = user.username;
+                    document.getElementById('email').value = user.email;
+                    document.getElementById('bio').value = user.bio || '';
+                }
+            } catch (error) {
+                console.error("User fetch error", error);
+                document.getElementById('username').value = currentUsername;
+                document.getElementById('email').value = currentEmail;
+            }
+        }
+
+        async function saveUser() {
+            const newEmail = document.getElementById('email').value;
+            const newBio = document.getElementById('bio').value;
+            const newPassword = document.getElementById('password').value;
+
+            const updateData = {
+                email: newEmail,
+                bio: newBio,
+                password: newPassword
+            };
+
+            try {
+                const response = await fetch(`${ADMIN_API_URL}/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (response.ok) {
+                    alert('Kullanıcı başarıyla güncellendi!');
+                    window.location.href = 'admin_users.html';
+                } else {
+                    alert('Hata oluştu: ' + await response.text());
+                }
+            } catch (error) {
+                console.error("Error", error);
+                alert("Sunucu hatası.");
+            }
+        }
+
+        loadUserDetails();
+    </script>
+</body>
+
+</html>

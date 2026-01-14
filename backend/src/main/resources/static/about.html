@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - Hakkımızda</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .page-content {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            line-height: 1.8;
+            color: #334155;
+        }
+
+        h1 {
+            color: #2563eb;
+        }
+    </style>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="dashboard-body" style="display: block;">
+    <div class="dashboard-container">
+        <!-- New Navbar Structure -->
+        <nav class="navbar"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 30px;">
+                <a href="index.html" class="logo"
+                    style="text-decoration: none; font-size: 24px; font-weight: 800; color: #2563eb; font-family: 'Segoe UI', sans-serif; line-height: 1; display: flex; align-items: center;">JobPazar</a>
+
+                <div class="nav-links" style="display: flex; align-items: center;">
+                    <a href="about.html" style="color:#2563eb;">Hakkımızda</a>
+                    <a href="contact.html">İletişim</a>
+                </div>
+            </div>
+
+            <div id="auth-section" style="display: flex; align-items: center; gap: 20px;">
+                <!-- Content injected by JS -->
+            </div>
+        </nav>
+
+        <div class="page-content">
+            <h1>Hakkımızda</h1>
+            <p><strong>JobPazar</strong>, freelance çalışanlar ile işverenleri bir araya getiren yeni nesil bir iş
+                platformudur.</p>
+
+            <h3 style="margin-top:20px; color:#1e293b;">Vizyonumuz</h3>
+            <p>Türkiye'nin en güvenilir ve en hızlı büyüyen freelance ekosistemi olmak. Yapay zeka destekli
+                araçlarımızla işe alım ve proje yönetim süreçlerini herkes için kolaylaştırmak.</p>
+
+            <h3 style="margin-top:20px; color:#1e293b;">Neler Sunuyoruz?</h3>
+            <ul>
+                <li>Güvenli ödeme ve iş takibi</li>
+                <li>AI Destekli Asistan</li>
+                <li>Kategorize edilmiş iş fırsatları</li>
+                <li>Adil rekabet ortamı</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- UI Helpers -->
+    <script src="ui.js"></script>
+    <script>
+        // Auth Logic shared from index.html
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            const authSection = document.getElementById('auth-section');
+
+            if (userStr) {
+                const currentUser = JSON.parse(userStr);
+                authSection.innerHTML = `
+                    <div class="dropdown">
+                        <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding: 5px;">
+                            <span style="color:#334155; font-weight:600; font-size:14px;">Merhaba, ${currentUser.username}</span>
+                            <div class="profile-icon">
+                                ${currentUser.username.charAt(0).toUpperCase()}
+                            </div>
+                        </div>
+                        <div class="dropdown-content">
+                            <a href="profile.html?section=info"><i class="fa-solid fa-user-pen"></i> Bilgilerim</a>
+                            <a href="profile.html?section=jobs"><i class="fa-solid fa-briefcase"></i> İlanlarım</a>
+                            <a href="profile.html?section=proposals"><i class="fa-solid fa-paper-plane"></i> Tekliflerim</a>
+                            <a href="profile.html?section=notifications"><i class="fa-solid fa-bell"></i> Bildirimler</a>
+                            <a href="#" onclick="logout()" style="color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                authSection.innerHTML = `
+                    <span style="color: #666; font-size: 14px;">Misafir Görünümü</span>
+                    <a href="login.html" style="text-decoration: none; color: #2563eb; font-weight: 600;">Giriş Yap</a>
+                    <a href="login.html" onclick="localStorage.setItem('openRegister', 'true')" style="text-decoration: none; color: #2563eb; font-weight: 600;">Üye Ol</a>
+                `;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+
+        checkAuth();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - Profilim</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .profile-header-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+            display: flex;
+            display: flex;
+            align-items: flex-start;
+            /* Align to top instead of center */
+            gap: 20px;
+            position: relative;
+        }
+
+        .profile-avatar-lg {
+            width: 100px;
+            height: 100px;
+            min-width: 100px;
+            /* Ensure circle shape */
+            min-height: 100px;
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-label {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .info-value {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .tab-menu {
+            display: flex;
+            gap: 30px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .tab-item {
+            padding: 10px 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-item:hover {
+            color: #2563eb;
+        }
+
+        .tab-item.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            width: 450px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+            width: auto;
+            /* Override global 100% width */
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+            width: auto;
+            /* Override global 100% width */
+        }
+
+        .list-container {
+            display: none;
+        }
+
+        .list-container.active {
+            display: block;
+        }
+
+        .item-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #f1f5f9;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .item-card:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: #e2e8f0;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-open {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-progress {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+        .status-completed {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .status-closed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="dashboard-container">
+        <!-- New Navbar Structure (Consistent with Index) -->
+        <nav class="navbar"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 30px; border-radius: 12px;">
+            <div style="display: flex; align-items: center; gap: 30px;">
+                <a href="index.html" class="logo"
+                    style="text-decoration: none; font-size: 24px; font-weight: 800; color: #2563eb; font-family: 'Segoe UI', sans-serif; line-height: 1; display: flex; align-items: center;">JobPazar</a>
+
+                <div class="nav-links"
+                    style="display: flex; align-items: center; gap: 20px; font-weight:500; font-size:15px;">
+                    <a href="about.html" style="color:#475569; text-decoration:none;">Hakkımızda</a>
+                    <a href="contact.html" style="color:#475569; text-decoration:none;">İletişim</a>
+                </div>
+            </div>
+
+            <div id="auth-section" style="display: flex; align-items: center; gap: 20px;">
+                <!-- Injected via JS -->
+            </div>
+        </nav>
+
+        <!-- Content Tabs -->
+        <div class="tab-menu">
+            <div class="tab-item active" onclick="switchTab('info')"><i class="fa-solid fa-user"></i> Bilgilerim</div>
+            <div class="tab-item" onclick="switchTab('jobs')"><i class="fa-solid fa-briefcase"></i> Yayınladığım İlanlar
+            </div>
+            <div class="tab-item" onclick="switchTab('proposals')"><i class="fa-solid fa-paper-plane"></i> Tekliflerim
+            </div>
+            <div class="tab-item" onclick="switchTab('notifications')"><i class="fa-solid fa-bell"></i> Bildirimler
+            </div>
+        </div>
+
+        <!-- My Info Tab -->
+        <div id="info-tab" class="list-container active">
+            <div class="profile-header-card">
+                <div class="profile-avatar-lg" id="avatar-lg">?</div>
+                <div style="flex:1; padding-top: 10px;"> <!-- Added padding-top for alignment -->
+                    <h2 id="display-name" style="margin:0; color:#1e293b; font-size:24px;">...</h2>
+                    <div style="margin-top: 12px; max-width: 750px;">
+                        <p id="display-bio"
+                            style="color:#475569; margin:0; font-size:14px; line-height:1.6; white-space: pre-wrap; word-wrap: break-word; text-align: justify;">
+                            <!-- Bio injected here -->
+                        </p>
+                    </div>
+                </div>
+                <!-- Edit button next to name or right aligned -->
+                <button onclick="openEditModal()" class="btn-primary"
+                    style="background: white; color: #2563eb; border: 1px solid #2563eb; padding: 8px 16px; font-size:14px; width: auto; flex-shrink: 0;">
+                    <i class="fa-solid fa-pen-to-square"></i> Düzenle
+                </button>
+            </div>
+
+            <h3 style="color:#334155; margin-bottom:15px; font-size:18px;">Hesap Detayları</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <span class="info-label"><i class="fa-solid fa-user"></i> Kullanıcı Adı</span>
+                    <span id="detail-username" class="info-value">...</span>
+                </div>
+                <div class="info-card">
+                    <span class="info-label"><i class="fa-solid fa-envelope"></i> E-posta Adresi</span>
+                    <span id="detail-email" class="info-value">...</span>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 50px; border: 1px solid #fecaca; background: #fef2f2; padding: 25px; border-radius: 12px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="flex: 1; padding-right: 20px;">
+                    <h3 style="color: #b91c1c; margin:0 0 5px 0; font-size:18px;"><i
+                            class="fa-solid fa-triangle-exclamation"></i> Tehlikeli Bölge</h3>
+                    <p style="color: #7f1d1d; margin:0; font-size:14px;">Hesabınızı sildiğinizde tüm verileriniz kalıcı
+                        olarak yok edilir. Bu işlem geri alınamaz.</p>
+                </div>
+                <button onclick="openDeleteModal()"
+                    style="background: white; color: #dc2626; border: 1px solid #dc2626; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; transition:all 0.2s; white-space: nowrap; width: auto; flex-shrink: 0;">
+                    Hesabımı Sil
+                </button>
+            </div>
+        </div>
+
+        <!-- My Jobs List -->
+        <div id="jobs-tab" class="list-container">
+            <h3 style="color:#334155; margin-bottom:20px;">Yayınladığım İlanlar</h3>
+            <div id="my-jobs-list">Yükleniyor...</div>
+        </div>
+
+        <!-- My Proposals List -->
+        <div id="proposals-tab" class="list-container">
+            <h3 style="color:#334155; margin-bottom:20px;">Başvurduğum İlanlar</h3>
+            <div id="my-proposals-list">Yükleniyor...</div>
+        </div>
+
+        <!-- Notifications List -->
+        <div id="notifications-tab" class="list-container">
+            <h3 style="color:#334155; margin-bottom:20px;">Son Aktiviteler</h3>
+            <div id="notifications-list">Yükleniyor...</div>
+        </div>
+
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-modal" class="modal-overlay">
+        <div class="modal">
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; width: 100%;">
+                <h3 style="margin:0; color:#1e293b; font-size:20px; white-space: nowrap;">Profili Düzenle</h3>
+                <button onclick="closeEditModal()"
+                    style="background:none; border:none; cursor:pointer; color:#64748b; font-size:24px; padding:0; line-height:1; width:auto; flex-shrink:0;">&times;</button>
+            </div>
+
+            <div class="form-group">
+                <label>Kullanıcı Adı</label>
+                <input type="text" id="edit-username">
+            </div>
+            <div class="form-group">
+                <label>E-posta Adresi</label>
+                <input type="email" id="edit-email">
+            </div>
+            <div class="form-group" style="position: relative;">
+                <label>Hakkımda / Yetenekler</label>
+                <textarea id="edit-bio" rows="5"
+                    placeholder="Örnek: Java geliştirici, 5 yıl deneyim, e-ticaret projeleri... (Anahtar kelimeler yazın, AI tamamlasın!)"
+                    style="width:100%; padding:12px; padding-bottom: 40px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; font-family:'Segoe UI', sans-serif; resize: vertical;"></textarea>
+
+                <!-- AI Magic Button -->
+                <button onclick="refineBioWithAI()" title="Yapay Zeka ile Tamamla"
+                    style="position: absolute; bottom: 15px; right: 15px; width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 30px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.25); transition: all 0.2s; white-space: nowrap; z-index: 10;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI ile Yaz
+                </button>
+            </div>
+
+            <div style="margin:20px 0; border-top:1px solid #e2e8f0; padding-top:20px;">
+                <p style="font-size:13px; color:#64748b; margin-bottom:10px;">Şifrenizi değiştirmek istemiyorsanız boş
+                    bırakın.</p>
+                <div class="form-group">
+                    <label>Yeni Şifre (İsteğe bağlı)</label>
+                    <input type="password" id="edit-new-password" placeholder="Yeni şifreniz">
+                </div>
+            </div>
+
+            <div
+                style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-bottom:20px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label style="color:#0f172a;">Mevcut Şifre (Onay için gerekli) <span
+                            style="color:red">*</span></label>
+                    <input type="password" id="edit-current-password"
+                        placeholder="Güvenlik için mevcut şifrenizi girin">
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button onclick="closeEditModal()" class="btn-secondary">İptal</button>
+                <button onclick="updateProfile()" class="btn-primary">Değişiklikleri Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Account Modal -->
+    <div id="delete-modal" class="modal-overlay">
+        <div class="modal">
+            <h3 style="margin-top:0; color:#ef4444;">Hesabı Sil</h3>
+            <p style="color:#64748b; font-size:14px; line-height:1.5;">
+                Hesabınızı silmek üzeresiniz. Lütfen devam etmek için şifrenizi girin.
+            </p>
+
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="del-password" placeholder="Mevcut şifreniz">
+            </div>
+
+            <div id="del-step-2" style="display:none; margin-top:15px; border-top:1px solid #e2e8f0; padding-top:10px;">
+                <p style="color:#ef4444; font-weight:600; font-size:14px; display:flex; gap:5px;"><i
+                        class="fa-solid fa-triangle-exclamation"></i> DİKKAT: Hesabınızı silmek üzeresiniz!</p>
+                <div class="form-group">
+                    <label>Onaylamak için kullanıcı adınızı yazın: <strong id="del-username-hint"></strong></label>
+                    <input type="text" id="del-username-confirm" placeholder="Kullanıcı adı"
+                        oninput="checkDeleteInput()">
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button onclick="closeDeleteModal()" class="btn-secondary">İptal</button>
+                <button id="btn-verify-pass" onclick="verifyPasswordForDelete()" class="btn-primary">Devam Et</button>
+                <button id="btn-final-delete" onclick="executeDelete()"
+                    style="display:none; background:#ef4444; color:white; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; font-weight:600;"
+                    disabled>HESABI SİL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Modal -->
+    <div id="delivery-modal" class="modal-overlay">
+        <div class="modal">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+                <h3 id="delivery-modal-title"
+                    style="margin:0; color:#1e293b; flex: 1; padding-right: 10px; line-height: 1.4;">İşi Teslim Et</h3>
+                <button onclick="closeDeliveryModal()"
+                    style="background:none; border:none; cursor:pointer; font-size:24px; line-height:1; color:#64748b; flex-shrink: 0;">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Teslimat Mesajı</label>
+                <textarea id="delivery-message" rows="4"
+                    style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"
+                    placeholder="İşi tamamladım, detaylar şöyledir..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Dosya Linki (Google Drive, WeTransfer vb.)</label>
+                <input type="text" id="delivery-file-url" placeholder="https://...">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button onclick="closeDeliveryModal()" class="btn-secondary">İptal</button>
+                <button onclick="submitDelivery()" class="btn-primary">Teslim Et</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="review-modal" class="modal-overlay">
+        <div class="modal">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+                <h3 id="review-modal-title"
+                    style="margin:0; color:#1e293b; flex: 1; padding-right: 10px; line-height: 1.4;">Teslimatı İncele
+                </h3>
+                <button onclick="closeReviewModal()"
+                    style="background:none; border:none; cursor:pointer; font-size:24px; line-height:1; color:#64748b; flex-shrink: 0;">&times;</button>
+            </div>
+            <div id="review-content"
+                style="background:#f8fafc; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #e2e8f0;">
+                Yükleniyor...
+            </div>
+            <div class="form-group">
+                <label>Revize Notu (Eğer revize isteyecekseniz)</label>
+                <textarea id="revision-feedback" rows="2"
+                    style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;"
+                    placeholder="Şurası olmamış, düzeltip tekrar atar mısın?"></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+                <button onclick="requestRevision()" class="btn-secondary"
+                    style="background:#fee2e2; color:#991b1b;">Revize İste</button>
+                <button onclick="approveWork()" class="btn-primary" style="background:#22c55e;">Onayla ve Bitir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Helpers -->
+    <script src="ui.js"></script>
+
+    <script>
+        const API_URL = '/api';
+        let currentUser = null;
+        const urlParams = new URLSearchParams(window.location.search);
+
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = JSON.parse(userStr);
+
+            // Populate Navbar Auth Section (Same as Index)
+            const authSection = document.getElementById('auth-section');
+            authSection.innerHTML = `
+                <div class="dropdown">
+                    <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding: 5px;">
+                        <span style="color:#334155; font-weight:600; font-size:14px;">Merhaba, ${currentUser.username}</span>
+                        <div class="profile-icon">
+                            ${currentUser.username.charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="dropdown-content">
+                        <a href="profile.html?section=info"><i class="fa-solid fa-user-pen"></i> Bilgilerim</a>
+                        <a href="profile.html?section=jobs"><i class="fa-solid fa-briefcase"></i> İlanlarım</a>
+                        <a href="profile.html?section=proposals"><i class="fa-solid fa-paper-plane"></i> Tekliflerim</a>
+                        <a href="profile.html?section=notifications"><i class="fa-solid fa-bell"></i> Bildirimler</a>
+                        <a href="#" onclick="logout()" style="color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</a>
+                    </div>
+                </div>
+            `;
+
+            // Fetch fresh user data from backend
+            fetch(`/api/auth/user/${currentUser.id}`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error('Failed to fetch fresh user data');
+                })
+                .then(updatedUser => {
+                    // Update current user and local storage
+                    currentUser = updatedUser;
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+
+                    // Re-render info with new data
+                    updateProfileUI();
+                })
+                .catch(err => {
+                    console.error('Could not refresh user data:', err);
+                    // Use existing local storage data if fetch fails
+                    updateProfileUI();
+                });
+        }
+
+        function updateProfileUI() {
+            // Populate Profile Info
+            document.getElementById('avatar-lg').innerText = currentUser.username.charAt(0).toUpperCase();
+            document.getElementById('display-name').innerText = currentUser.username;
+            document.getElementById('display-bio').innerText = currentUser.bio || 'Henüz bir biyografi eklenmemiş.';
+
+            // Details
+            document.getElementById('detail-username').innerText = currentUser.username;
+            // Now we use the email from the potentially refreshed currentUser
+            document.getElementById('detail-email').innerText = currentUser.email || 'Belirtilmemiş';
+
+            document.getElementById('del-username-hint').innerText = currentUser.username;
+
+            // Update auth section name as well
+            const authNameSpan = document.querySelector('#auth-section span');
+            if (authNameSpan) authNameSpan.innerText = `Merhaba, ${currentUser.username}`;
+
+            // Update auth avatar
+            const authAvatar = document.querySelector('#auth-section .profile-icon');
+            if (authAvatar) authAvatar.innerText = currentUser.username.charAt(0).toUpperCase();
+
+            loadMyJobs();
+            loadMyProposals();
+            loadNotifications();
+
+            // Handle URL Section
+            const section = urlParams.get('section') || 'info';
+            switchTab(section);
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+
+        function switchTab(tab) {
+            // Update URL
+            const url = new URL(window.location);
+            url.searchParams.set('section', tab);
+            window.history.pushState({}, '', url);
+
+            // Update UI
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.list-container').forEach(c => c.classList.remove('active'));
+
+            // Map tab names to indices
+            const tabs = ['info', 'jobs', 'proposals', 'notifications'];
+            const index = tabs.indexOf(tab);
+
+            if (index !== -1) {
+                document.querySelectorAll('.tab-item')[index].classList.add('active');
+                document.getElementById(`${tab}-tab`).classList.add('active');
+            }
+        }
+
+        async function loadMyJobs() {
+            try {
+                const response = await fetch(`${API_URL}/jobs/my-jobs?userId=${currentUser.id}`);
+                const jobs = await response.json();
+                const container = document.getElementById('my-jobs-list');
+
+                if (jobs.length === 0) {
+                    container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px; background:#f8fafc; border-radius:8px;">Henüz ilan yayınlamadınız.</p>';
+                    return;
+                }
+
+                container.innerHTML = jobs.map(job => {
+                    const statusMap = {
+                        'OPEN': { text: 'Yayında', class: 'status-open' },
+                        'IN_PROGRESS': { text: 'Devam Ediyor', class: 'status-progress' },
+                        'REVIEW': { text: 'İnceleniyor', class: 'status-progress', style: 'background:#e0f2fe; color:#0369a1;' },
+                        'COMPLETED': { text: 'Tamamlandı', class: 'status-completed' },
+                        'CLOSED': { text: 'Kapandı', class: 'status-closed' },
+                        'CANCELLED': { text: 'İptal', class: 'status-closed' }
+                    };
+                    const info = statusMap[job.status] || { text: job.status, class: 'status-completed' };
+
+                    let actionBtn = '';
+                    if (job.status === 'REVIEW') {
+                        actionBtn = `<button onclick="event.stopPropagation(); openReviewModal(${job.id}, '${job.title.replace(/'/g, "\\'")}')" class="btn-primary" style="font-size:12px; padding:6px 12px; margin-top:8px; width:auto;">Teslimatı İncele</button>`;
+                    }
+
+                    return `
+                    <div class="item-card" onclick="window.location.href='job_detail.html?id=${job.id}&from=profile-jobs'">
+                        <div>
+                            <h4 style="margin:0; font-size:18px; color:#333;">${job.title}</h4>
+                            <div style="margin-top:8px;">
+                                <span class="status-badge ${info.class}" style="${info.style || ''}">${info.text}</span>
+                            </div>
+                            ${actionBtn}
+                        </div>
+                        <div style="color:#cbd5e1;">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadMyProposals() {
+            try {
+                const response = await fetch(`${API_URL}/proposals/my-proposals?freelancerId=${currentUser.id}`);
+                const proposals = await response.json();
+                const container = document.getElementById('my-proposals-list');
+
+                if (proposals.length === 0) {
+                    container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px; background:#f8fafc; border-radius:8px;">Henüz bir ilana başvurmadınız.</p>';
+                    return;
+                }
+
+                container.innerHTML = proposals.map(p => {
+                    const statusMap = {
+                        'PENDING': { text: 'Beklemede', class: 'status-progress' },
+                        'ACCEPTED': { text: 'Kabul Edildi', class: 'status-open' },
+                        'REJECTED': { text: 'Reddedildi', class: 'status-closed' }
+                    };
+                    const info = statusMap[p.status] || { text: p.status || 'Beklemede', class: 'status-progress' };
+
+                    let actionBtn = '';
+                    if (p.status === 'ACCEPTED' && p.job) {
+                        if (p.job.status === 'IN_PROGRESS') {
+                            actionBtn = `<button onclick="event.stopPropagation(); openDeliveryModal(${p.id}, '${p.job.title.replace(/'/g, "\\'")}')" class="btn-primary" style="font-size:12px; padding:4px 10px; margin-left:10px; width:auto;">İşi Teslim Et</button>`;
+                        } else if (p.job.status === 'REVIEW') {
+                            actionBtn = `<span class="status-badge" style="background:#e0f2fe; color:#0369a1; margin-left:10px;">İnceleniyor</span>`;
+                        } else if (p.job.status === 'COMPLETED') {
+                            actionBtn = `<span class="status-badge" style="background:#dcfce7; color:#166534; margin-left:10px;"><i class="fa-solid fa-check"></i> Tamamlandı</span>`;
+                        }
+                    }
+
+                    return `
+                    <div class="item-card" onclick="window.location.href='job_detail.html?id=${p.job?.id}&from=profile-proposals'">
+                        <div>
+                            <h4 style="margin:0; font-size:18px; color:#333;">${p.job ? p.job.title : 'Silinmiş İlan'}</h4>
+                            <div style="margin-top:8px; display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:14px; color:#64748b;">Teklif: <strong>${p.price} TL</strong></span>
+                                <span class="status-badge ${info.class}">${info.text}</span>
+                                ${actionBtn}
+                            </div>
+                        </div>
+                        <div style="color:#cbd5e1;">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadNotifications() {
+            const container = document.getElementById('notifications-list');
+            container.innerHTML = '<p style="color:#64748b; text-align:center; padding:20px;">Yükleniyor...</p>';
+
+            try {
+                // 1. Fetch Real Notifications (Admin Replies, etc.)
+                let realNotifications = [];
+                try {
+                    const notifResponse = await fetch(`${API_URL}/notifications/${currentUser.id}`);
+                    if (notifResponse.ok) {
+                        const data = await notifResponse.json();
+                        realNotifications = data.map(n => ({
+                            type: 'system',
+                            message: n.message, // Plain text currently
+                            title: 'Bildirim',
+                            date: new Date(n.createdAt),
+                            rawDate: n.createdAt,
+                            icon: '<i class="fa-solid fa-bell" style="color:#fbbf24;"></i>',
+                            onClick: null
+                        }));
+                    }
+                } catch (e) {
+                    console.error("Real notifications fetch failed", e);
+                }
+
+                // 2. Fetch Proposal "Notifications" (Old Logic - Dynamic)
+                let proposalNotifications = [];
+                try {
+                    const jobsResponse = await fetch(`${API_URL}/jobs/my-jobs?userId=${currentUser.id}`);
+                    if (jobsResponse.ok) {
+                        const jobs = await jobsResponse.json();
+                        if (jobs.length > 0) {
+                            const promises = jobs.map(async job => {
+                                const res = await fetch(`${API_URL}/proposals/${job.id}`);
+                                if (res.ok) {
+                                    const proposals = await res.json();
+                                    proposals.forEach(p => {
+                                        proposalNotifications.push({
+                                            type: 'proposal',
+                                            message: `<strong>${p.freelancer ? p.freelancer.username : 'Birisi'}</strong>, <strong>${p.price} TL</strong> teklif verdi.`,
+                                            title: `Yeni Teklif: ${job.title}`,
+                                            date: new Date(p.createdAt || Date.now()),
+                                            rawDate: p.createdAt || Date.now(),
+                                            icon: '<i class="fa-solid fa-briefcase" style="color:#3b82f6;"></i>',
+                                            onClick: `window.location.href='job_detail.html?id=${job.id}&from=profile'`
+                                        });
+                                    });
+                                }
+                            });
+                            await Promise.all(promises);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Proposal notifications fetch failed", e);
+                }
+
+                // 3. Merge and Sort
+                const allNotifications = [...realNotifications, ...proposalNotifications];
+
+                // Sort descending by date
+                allNotifications.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
+
+                if (allNotifications.length === 0) {
+                    container.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px; background:#f8fafc; border-radius:8px;">Yeni bildiriminiz yok.</p>';
+                    return;
+                }
+
+                container.innerHTML = allNotifications.map(n => `
+                    <div class="item-card notif-card" ${n.onClick ? `onclick="${n.onClick}"` : 'style="cursor:default;"'}>
+                        <div>
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
+                                ${n.icon}
+                                <h4 style="margin:0; font-size:16px; color:#333;">${n.title}</h4>
+                            </div>
+                            <p style="margin:5px 0 10px; color:#475569; font-size:14px; line-height:1.5;">
+                                ${n.message}
+                            </p>
+                            <small style="color:#94a3b8;"><i class="fa-regular fa-clock"></i> ${n.date.toLocaleString('tr-TR')}</small>
+                        </div>
+                        ${n.onClick ? `<div style="color:#cbd5e1;"><i class="fa-solid fa-chevron-right"></i></div>` : ''}
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<p style="color:red; text-align:center;">Bildirimler yüklenirken hata oluştu.</p>';
+            }
+        }
+
+        // --- EDIT PROFILE LOGIC ---
+        function openEditModal() {
+            // Fill current values
+            document.getElementById('edit-username').value = currentUser.username;
+            document.getElementById('edit-email').value = currentUser.email || '';
+            document.getElementById('edit-bio').value = currentUser.bio || '';
+            document.getElementById('edit-current-password').value = '';
+            document.getElementById('edit-current-password').value = '';
+            document.getElementById('edit-new-password').value = '';
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        async function updateProfile() {
+            const username = document.getElementById('edit-username').value;
+            const email = document.getElementById('edit-email').value;
+            const bio = document.getElementById('edit-bio').value;
+            const currentPassword = document.getElementById('edit-current-password').value;
+            const newPassword = document.getElementById('edit-new-password').value;
+
+            if (!currentPassword) {
+                showToast("Lütfen onay için mevcut şifrenizi girin.");
+                return;
+            }
+
+            const payload = {
+                userId: currentUser.id.toString(),
+                currentPassword: currentPassword,
+                username: username,
+                email: email,
+                bio: bio,
+                newPassword: newPassword
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/auth/update`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showToast("Profil başarıyla güncellendi!");
+
+                    // Update LocalStorage
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    // Close Modal & Reload
+                    closeEditModal();
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    try {
+                        const errData = await response.json();
+                        // Show friendly message if available, else generic
+                        const msg = errData.message || errData.error || "Güncelleme başarısız oldu.";
+                        // If message is too long (like a stack trace), truncate/simplify it
+                        if (msg.length > 100) {
+                            showToast("Hata: İşlem gerçekleştirilemedi. Lütfen girdilerinizi kontrol edin.");
+                        } else {
+                            showToast("Hata: " + msg);
+                        }
+                    } catch (parseErr) {
+                        const txt = await response.text();
+                        showToast("Hata: Beklenmedik bir sorun oluştu.");
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Sunucu hatası.");
+            }
+        }
+
+        // --- DELETE ACCOUNT LOGIC ---
+        function openDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('delete-modal').style.display = 'none';
+            // Reset
+            document.getElementById('del-password').value = '';
+            document.getElementById('del-username-confirm').value = '';
+            document.getElementById('del-step-2').style.display = 'none';
+            document.getElementById('btn-verify-pass').style.display = 'block';
+            document.getElementById('btn-final-delete').style.display = 'none';
+        }
+
+        function verifyPasswordForDelete() {
+            const pass = document.getElementById('del-password').value;
+            if (!pass) { showToast('Lütfen şifrenizi girin'); return; }
+            document.getElementById('del-step-2').style.display = 'block';
+            document.getElementById('btn-verify-pass').style.display = 'none';
+            document.getElementById('btn-final-delete').style.display = 'block';
+        }
+
+        function checkDeleteInput() {
+            const input = document.getElementById('del-username-confirm').value;
+            const btn = document.getElementById('btn-final-delete');
+            if (input === currentUser.username) {
+                btn.disabled = false;
+                btn.style.opacity = 1;
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = 0.5;
+            }
+        }
+
+        async function executeDelete() {
+            const password = document.getElementById('del-password').value;
+            const username = document.getElementById('del-username-confirm').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/delete-account`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    showToast('Hesabınız başarıyla silindi. Yönlendiriliyorsunuz...');
+                    localStorage.removeItem('user');
+                    setTimeout(() => window.location.href = 'index.html', 1500);
+                } else {
+                    const txt = await response.text();
+                    showToast('Hata: ' + txt);
+                }
+            } catch (e) {
+                showToast('Sunucu hatası');
+            }
+        }
+
+        // --- JOB DELIVERY LOGIC ---
+        let currentDeliveryProposalId = null;
+        let currentReviewJobId = null;
+
+        function openDeliveryModal(proposalId, jobTitle) {
+            currentDeliveryProposalId = proposalId;
+            document.getElementById('delivery-modal-title').innerText = jobTitle + ' - İşi Teslim Et';
+            document.getElementById('delivery-modal').style.display = 'flex';
+        }
+
+        function closeDeliveryModal() {
+            document.getElementById('delivery-modal').style.display = 'none';
+            document.getElementById('delivery-message').value = '';
+            document.getElementById('delivery-file-url').value = '';
+        }
+
+        async function submitDelivery() {
+            const message = document.getElementById('delivery-message').value;
+            const fileUrl = document.getElementById('delivery-file-url').value;
+
+            if (!message) { showToast('Lütfen bir mesaj yazın.'); return; }
+
+            const btn = document.querySelector('#delivery-modal .btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Gönderiliyor...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/jobs/deliver/${currentDeliveryProposalId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, fileUrl })
+                });
+                if (res.ok) {
+                    showToast('İş başarıyla teslim edildi!');
+                    closeDeliveryModal();
+                    loadMyProposals();
+                    // Refresh jobs too if user is both
+                    loadMyJobs();
+                } else {
+                    const txt = await res.text();
+                    showToast('Hata: ' + txt);
+                }
+            } catch (e) { console.error(e); showToast('Sunucu hatası'); }
+            finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function openReviewModal(jobId, jobTitle) {
+            currentReviewJobId = jobId;
+            document.getElementById('review-modal-title').innerText = jobTitle + ' - Teslimat İncelemesi';
+            document.getElementById('review-content').innerHTML = '<p>Yükleniyor...</p>';
+            document.getElementById('review-modal').style.display = 'flex';
+
+            try {
+                // Find accepted proposal for this job to see delivery info
+                // We use existing proposals endpoint
+                const res = await fetch(`${API_URL}/proposals/${jobId}`);
+                if (res.ok) {
+                    const proposals = await res.json();
+                    const accepted = proposals.find(p => p.status === 'ACCEPTED');
+                    if (accepted) {
+                        let fileUrl = accepted.deliveryFileUrl;
+                        if (fileUrl && !fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+                            fileUrl = 'https://' + fileUrl;
+                        }
+
+                        document.getElementById('review-content').innerHTML = `
+                            <p style="margin-bottom:10px;"><strong>Teslimat Mesajı:</strong></p>
+                            <div style="background:white; padding:10px; border-radius:5px; border:1px solid #e2e8f0; margin-bottom:10px; white-space: pre-wrap;">${accepted.deliveryMessage || 'Mesaj yok'}</div>
+                            
+                            <p style="margin-bottom:5px;"><strong>Dosya:</strong></p>
+                            ${fileUrl ? `<a href="${fileUrl}" target="_blank" style="color:#2563eb; text-decoration:underline;">Dosyayı Görüntüle <i class="fa-solid fa-external-link-alt"></i></a>` : '<span style="color:#64748b;">Dosya eklenmemiş</span>'}
+                        `;
+                    } else {
+                        document.getElementById('review-content').innerHTML = '<p style="color:red;">Kabul edilen teklif bulunamadı.</p>';
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                document.getElementById('review-content').innerHTML = '<p style="color:red;">Detaylar yüklenemedi.</p>';
+            }
+        }
+
+        function closeReviewModal() {
+            document.getElementById('review-modal').style.display = 'none';
+            document.getElementById('revision-feedback').value = '';
+        }
+
+        async function approveWork() {
+            if (!confirm("İşi onaylamak ve tamamlamak istediğinizden emin misiniz?")) return;
+
+            try {
+                const res = await fetch(`${API_URL}/jobs/approve/${currentReviewJobId}`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('İş onaylandı ve tamamlandı!');
+                    closeReviewModal();
+                    loadMyJobs();
+                } else {
+                    showToast('Hata oluştu.');
+                }
+            } catch (e) { console.error(e); showToast('Sunucu hatası'); }
+        }
+
+        async function requestRevision() {
+            const feedback = document.getElementById('revision-feedback').value;
+            if (!feedback) { showToast('Lütfen revize için bir not yazın.'); return; }
+
+            try {
+                const res = await fetch(`${API_URL}/jobs/revision/${currentReviewJobId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ feedback })
+                });
+                if (res.ok) {
+                    showToast('Revize talebi gönderildi.');
+                    closeReviewModal();
+                    loadMyJobs();
+                } else {
+                    showToast('Hata oluştu.');
+                }
+            } catch (e) { console.error(e); showToast('Sunucu hatası'); }
+        }
+
+        // --- AI BIO GENERATOR ---
+        async function refineBioWithAI() {
+            const textarea = document.getElementById('edit-bio');
+            const originalText = textarea.value.trim();
+
+            if (!originalText) {
+                showToast("⚠️ Lütfen AI'ın tamamlaması için birkaç anahtar kelime veya taslak yazın.");
+                textarea.focus();
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="refineBioWithAI()"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yazıyor...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/ai/refine-bio`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: originalText })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Typewriter effect for fun
+                    let i = 0;
+                    const resultText = data.response;
+                    textarea.value = "";
+                    const interval = setInterval(() => {
+                        textarea.value += resultText.charAt(i);
+                        i++;
+                        if (i > resultText.length) clearInterval(interval);
+                    }, 10); // fast typing
+
+                } else {
+                    const err = await response.json();
+                    showToast("Hata: " + (err.error || "AI yanıt veremedi."));
+                }
+            } catch (e) {
+                showToast("Sunucu hatası: AI servisine ulaşılamadı.");
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        checkAuth();
+    </script>
+</body>
+
+</html>

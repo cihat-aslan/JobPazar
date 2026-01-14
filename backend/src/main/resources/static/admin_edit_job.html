@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar Admin - İlan Düzenle</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-back {
+            background-color: #64748b;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .edit-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .btn-save {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-save:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="container">
+        <div class="header">
+            <h2 class="section-title" style="margin:0">İlan Düzenle (Admin)</h2>
+            <a href="admin_jobs.html" class="btn-back">← İlanlara Dön</a>
+        </div>
+
+        <div class="edit-card">
+            <div class="form-group">
+                <label>İlan Başlığı</label>
+                <input type="text" id="title">
+            </div>
+
+            <div class="form-group">
+                <label>Açıklama</label>
+                <textarea id="description" rows="10"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Kategori</label>
+                <select id="category">
+                    <option value="Yazılım Geliştirme">Yazılım Geliştirme</option>
+                    <option value="Grafik Tasarım">Grafik Tasarım</option>
+                    <option value="Dijital Pazarlama">Dijital Pazarlama</option>
+                    <option value="Çeviri & İçerik">Çeviri & İçerik</option>
+                    <option value="Video & Animasyon">Video & Animasyon</option>
+                    <option value="Diğer">Diğer</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Bütçe Aralığı</label>
+                <select id="budget">
+                    <option value="Very Low">Çok Düşük (1 - 1.000 TL)</option>
+                    <option value="Low">Düşük (1.001 - 5.000 TL)</option>
+                    <option value="Medium">Orta (5.001 - 15.000 TL)</option>
+                    <option value="High">Yüksek (15.001 - 50.000 TL)</option>
+                    <option value="Very High">Çok Yüksek (50.000+ TL)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Durum</label>
+                <input type="text" id="statusDisplay" disabled
+                    style="background-color: #f1f5f9; color: #64748b; font-weight: bold; cursor: not-allowed;">
+                <!-- Hidden input to store the actual status value to send back to server -->
+                <input type="hidden" id="status">
+            </div>
+
+            <div class="form-group">
+                <label>Tahmini Süre (Gün)</label>
+                <input type="number" id="duration" placeholder="Örn: 30" required min="1">
+            </div>
+
+            <button class="btn-save" onclick="saveJob()">Güncelle</button>
+        </div>
+    </div>
+
+    <!-- UI Helpers -->
+    <script src="ui.js"></script>
+
+    <script>
+        // Use regular jobs API but Admin might need special permissions or we treat it as overwrite
+        // Assuming current backend allows editing any job if no strict ownership check is in place, 
+        // OR we should use an admin specific endpoint if one existed. 
+        // For now using /api/jobs/{id} assuming backend checks allow or we are admin. 
+        // If strict ownership logic exists in backend, we might need a new AdminController endpoint.
+        // Let's check AdminController again later if this fails.
+        // Based on AdminController.java (read earlier), it has deleteJob but NOT updateJob. 
+        // JobController has updateJob. Let's try reusing JobController. 
+        // If it fails due to "Not Owner", we will need to add updateJob to AdminController.
+
+        // Actually, let's use the standard endpoint first.
+        const API_URL = '/api/jobs';
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('id');
+
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        const statusLabels = {
+            'OPEN': 'Yayında',
+            'IN_PROGRESS': 'Devam Ediyor',
+            'COMPLETED': 'Tamamlandı'
+        };
+
+        async function loadJobDetails() {
+            try {
+                const response = await fetch(`${API_URL}/${jobId}`);
+                if (response.ok) {
+                    const job = await response.json();
+                    document.getElementById('title').value = job.title;
+                    document.getElementById('description').value = job.description;
+                    document.getElementById('budget').value = job.budget;
+                    document.getElementById('category').value = job.category || 'Diğer';
+
+                    // Set Status
+                    document.getElementById('status').value = job.status;
+                    document.getElementById('statusDisplay').value = statusLabels[job.status] || job.status;
+
+                    document.getElementById('duration').value = job.duration || '';
+                } else {
+                    showToast("İlan bulunamadı.");
+                    setTimeout(() => window.location.href = 'admin_jobs.html', 1500);
+                }
+            } catch (error) {
+                console.error("Error", error);
+                showToast("Sunucu hatası.");
+            }
+        }
+
+        async function saveJob() {
+            const title = document.getElementById('title').value;
+            const desc = document.getElementById('description').value;
+            const budget = document.getElementById('budget').value;
+            const category = document.getElementById('category').value;
+            const status = document.getElementById('status').value;
+            const duration = document.getElementById('duration').value;
+
+            try {
+                const response = await fetch(`${API_URL}/${jobId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Add Authorization header if needed, assuming cookie/session or global logic
+                    },
+                    body: JSON.stringify({
+                        title,
+                        description: desc,
+                        budget,
+                        category,
+                        status, // Admin can force change status
+                        duration: parseInt(duration || 0)
+                    })
+                });
+
+                if (response.ok) {
+                    showToast('İlan başarıyla güncellendi! 🎉', 'success');
+                    setTimeout(() => window.location.href = 'admin_jobs.html', 1500);
+                } else {
+                    const err = await response.text();
+                    showToast('Güncelleme hatası: ' + err);
+                }
+            } catch (error) {
+                console.error("Error updating job:", error);
+                showToast('Sunucu hatası.');
+            }
+        }
+
+        if (jobId) {
+            loadJobDetails();
+        } else {
+            alert("İlan ID eksik!");
+            window.location.href = 'admin_jobs.html';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - Sistem Ayarları</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-back {
+            background-color: #64748b;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .settings-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+            /* Fix padding issue */
+        }
+
+        .btn-save {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .btn-save:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="container">
+        <div class="header">
+            <h2 class="section-title" style="margin:0">Sistem Ayarları</h2>
+            <a href="admin_dashboard.html" class="btn-back">← Panele Dön</a>
+        </div>
+
+        <div class="settings-card">
+            <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:20px;">Yapay Zeka
+                (Google Gemini)</h3>
+            <div class="form-group">
+                <label>API Key</label>
+                <input type="password" value="************************" disabled>
+                <small style="color:#999">API anahtarı application.properties dosyasından okunur.</small>
+            </div>
+            <div class="form-group">
+                <label>Model</label>
+                <input type="text" value="gemini-1.5-flash" disabled>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:15px; margin-bottom:20px;">Mail
+                Sunucusu (Mock)</h3>
+            <div class="form-group">
+                <label>Sunucu Adresi (SMTP Host)</label>
+                <input type="text" value="smtp.office365.com">
+            </div>
+            <div class="form-group">
+                <label>Port</label>
+                <input type="text" value="587">
+            </div>
+            <button class="btn-save" onclick="saveSettings()">Değişiklikleri Kaydet</button>
+        </div>
+    </div>
+
+    <script>
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        function saveSettings() {
+            // Mock functionality
+            alert("Ayarlar başarıyla kaydedildi! (Mock)");
+        }
+    </script>
+</body>
+
+</html>

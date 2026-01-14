@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - Kullanıcı Yönetimi</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-back {
+            background-color: #64748b;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .user-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .role-EMPLOYER {
+            background-color: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .role-FREELANCER {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .role-ADMIN {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-edit {
+            background-color: #3b82f6;
+            /* Blue-500 */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 8px;
+            /* Added gap */
+        }
+
+        .btn-edit:hover {
+            background-color: #2563eb;
+            /* Blue-600 */
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="container">
+        <div class="header">
+            <h2 class="section-title" style="margin:0">Kullanıcı Listesi</h2>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="search-input" placeholder="Kullanıcı ara..."
+                    style="padding:10px; border-radius:8px; border:1px solid #ccc;">
+                <select id="role-filter" style="padding:10px; border-radius:8px; border:1px solid #ccc;">
+                    <option value="ALL">Tüm Roller</option>
+                    <option value="USER">Standart Kullanıcı</option>
+                    <option value="ADMIN">Yönetici</option>
+                </select>
+            </div>
+            <a href="admin_dashboard.html" class="btn-back">← Panele Dön</a>
+        </div>
+
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Kullanıcı Adı</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="user-list-body">
+                <tr>
+                    <td colspan="5" style="text-align:center; color:#999;">Yükleniyor...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- UI Helpers -->
+    <script src="ui.js"></script>
+
+    <script>
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        const API_URL = '/api/admin';
+
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}/users`);
+                let allUsers = await response.json();
+
+                // Sort Users: ADMIN first, then by ID
+                allUsers.sort((a, b) => {
+                    if (a.role === 'ADMIN' && b.role !== 'ADMIN') return -1;
+                    if (a.role !== 'ADMIN' && b.role === 'ADMIN') return 1;
+                    return a.id - b.id;
+                });
+
+                renderUsers(allUsers);
+
+                // Add Event Listeners
+                const searchInput = document.getElementById('search-input');
+                const roleFilter = document.getElementById('role-filter');
+
+                // Clone nodes to remove old event listeners if any (simple way to avoid duplicates if called multiple times)
+                const newSearch = searchInput.cloneNode(true);
+                const newFilter = roleFilter.cloneNode(true);
+                searchInput.parentNode.replaceChild(newSearch, searchInput);
+                roleFilter.parentNode.replaceChild(newFilter, roleFilter);
+
+                newSearch.addEventListener('input', () => filterUsers(allUsers));
+                newFilter.addEventListener('change', () => filterUsers(allUsers));
+
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Kullanıcı listesi yüklenemedi.');
+            }
+        }
+
+        function filterUsers(users) {
+            const searchValue = document.getElementById('search-input').value.toLowerCase();
+            const roleValue = document.getElementById('role-filter').value;
+
+            const filtered = users.filter(user => {
+                const matchesSearch = user.username.toLowerCase().includes(searchValue) || user.email.toLowerCase().includes(searchValue);
+
+                // Normalizing user role: if null or undefined, treat as 'USER'
+                const userRole = user.role || 'USER';
+
+                const matchesRole = roleValue === 'ALL' || userRole === roleValue;
+                return matchesSearch && matchesRole;
+            });
+
+            renderUsers(filtered);
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('user-list-body');
+            tbody.innerHTML = '';
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Kullanıcı bulunamadı.</td></tr>';
+                return;
+            }
+
+            users.forEach(user => {
+                const isAdmin = user.role === 'ADMIN';
+                let actionButtons = '';
+
+                // Normalize role for display
+                // If null, undefined, or empty, assume USER
+                const effectiveRole = user.role || 'USER';
+
+                let roleLabel = 'Bilinmiyor';
+                if (effectiveRole === 'USER') roleLabel = 'Standart Kullanıcı';
+                else if (effectiveRole === 'ADMIN') roleLabel = 'Yönetici';
+                else roleLabel = effectiveRole;
+
+                let roleDisplay = `<span class="role-badge role-${effectiveRole}">${roleLabel}</span>`;
+
+                if (user.requestedRole) {
+                    roleDisplay += ` <small style="color:#eab308; font-weight:bold; margin-left:5px;">(Talep: ${user.requestedRole})</small>`;
+                }
+
+                if (isAdmin) {
+                    actionButtons = '<span style="color:#999; font-size:12px; font-style:italic;">İşlem Yapılamaz</span>';
+                } else {
+                    actionButtons = `
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn-edit" onclick="goToEditPage(${user.id}, '${user.username}', '${user.email}', '${user.role}')">Düzenle</button>
+                            <button class="btn-delete" onclick="deleteUser(${user.id})">Sil</button>
+                        </div>
+                    `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${user.id}</td>
+                    <td><span style="font-weight:500">${user.username}</span></td>
+                    <td>${user.email}</td>
+                    <td>${roleDisplay}</td>
+                    <td>${actionButtons}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteUser(id) {
+            showConfirm("Bu kullanıcıyı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", async function () {
+                try {
+                    const response = await fetch(`${API_URL}/users/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        showToast('Kullanıcı başarıyla silindi.', 'success');
+                        loadUsers();
+                    } else {
+                        showToast('Silme başarısız: ' + await response.text());
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showToast('Sunucu hatası.');
+                }
+            });
+        }
+
+        function goToEditPage(id, username, email, role) {
+            window.location.href = `admin_edit_user.html?id=${id}&username=${username}&email=${email}&role=${role}`;
+        }
+
+        loadUsers();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+target/
+*.jar
+!.mvn/wrapper/*.jar
+
+# IDE files
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+.apt_generated
+.nb-gradle/
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+
+# Environment files
+.env
+*.env
+
+# Security - PEM files
+*.pem
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Expo/React Native
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/

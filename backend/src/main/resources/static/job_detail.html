@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - İlan Detayı</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .detail-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        .budget-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .description-box {
+            color: #475569;
+            line-height: 1.8;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .meta-info {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #f1f5f9;
+            color: #475569;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .btn-back:hover {
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="container">
+        <a href="index.html" class="btn-back" id="back-btn">← İlanlara Dön</a>
+
+        <div id="loading" style="text-align:center; color:#666;">Yükleniyor...</div>
+
+        <div id="job-content" class="detail-card" style="display:none;">
+            <div class="header-row">
+                <div>
+                    <h1 id="job-title" style="margin:0; color:#1e293b; font-size: 32px;">...</h1>
+                    <div id="countdown-timer" style="margin-top:5px; color:#ef4444; font-weight:600; font-size:14px;">
+                    </div>
+                </div>
+                <span id="job-budget" class="budget-badge">...</span>
+            </div>
+
+            <div class="meta-info">
+                İlan No: #<span id="job-id"></span> | İşveren: <span id="employer-name"></span>
+            </div>
+
+            <div class="description-box">
+                <h3 style="color:#334155; border-bottom:1px solid #e2e8f0; padding-bottom:10px;">İş Tanımı</h3>
+                <p id="job-desc">...</p>
+            </div>
+
+            <div id="action-area">
+                <!-- Buttons/Forms injected here -->
+            </div>
+
+            <!-- Proposals Section -->
+            <div id="proposals-section" style="margin-top: 40px; padding-top: 20px; border-top: 2px dashed #e2e8f0;">
+                <h3 style="color:#334155;">Teklifler</h3>
+                <div id="proposals-list" style="margin-top:15px; display:flex; flex-direction:column; gap:10px;">
+                    <p style="color:#94a3b8;">Yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Helpers -->
+    <script src="ui.js"></script>
+
+    <script>
+        const API_URL = '/api';
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('id');
+        const fromPage = urlParams.get('from');
+        let currentUser = null;
+
+        // Smart Back Button Logic
+        if (fromPage === 'profile' || fromPage === 'profile-jobs') {
+            const btn = document.getElementById('back-btn');
+            btn.innerText = '← İlanlarıma Dön';
+            btn.href = 'profile.html?section=jobs';
+        } else if (fromPage === 'profile-proposals') {
+            const btn = document.getElementById('back-btn');
+            btn.innerText = '← Tekliflerime Dön';
+            btn.href = 'profile.html?section=proposals';
+        }
+
+        function checkAuth() {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+            }
+        }
+
+        async function loadJobDetail() {
+            if (!jobId) {
+                document.getElementById('loading').innerText = 'İlan ID bulunamadı.';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/jobs/${jobId}`);
+                if (!response.ok) throw new Error('İlan bulunamadı');
+
+                const job = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('job-content').style.display = 'block';
+
+                document.getElementById('job-title').innerText = job.title;
+                document.getElementById('job-budget').innerText = job.budget;
+                // Add correct class for budget color
+                const budgetClass = getBudgetBadgeClass(job.budget);
+                document.getElementById('job-budget').className = `budget-badge ${budgetClass}`;
+
+                document.getElementById('job-id').innerText = job.id;
+                document.getElementById('employer-name').innerText = job.employer ? job.employer.username : 'Anonim';
+                document.getElementById('job-desc').innerText = job.description;
+
+                // Countdown Logic Upgrade
+                if (job.status === 'IN_PROGRESS' && job.startedAt && job.duration) {
+                    const started = new Date(job.startedAt);
+                    const deadline = new Date(started.getTime() + (job.duration * 24 * 60 * 60 * 1000));
+                    const now = new Date();
+                    const diff = deadline - now;
+
+                    if (diff > 0) {
+                        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        document.getElementById('countdown-timer').innerText = `🔥 Kalan Süre: ${days} gün ${hours} saat`;
+                        document.getElementById('countdown-timer').style.color = '#f59e0b'; // Orange for active
+                    } else {
+                        document.getElementById('countdown-timer').innerText = `⚠️ Süre Doldu`;
+                        document.getElementById('countdown-timer').style.color = '#94a3b8';
+                    }
+                } else if (job.status === 'OPEN') {
+                    document.getElementById('countdown-timer').innerText = `⏳ Süre: ${job.duration} Gün (Başlamadı)`;
+                    document.getElementById('countdown-timer').style.color = '#2563eb'; // Blue for open
+                } else if (job.status === 'COMPLETED') {
+                    document.getElementById('countdown-timer').innerText = `✅ Tamamlandı`;
+                    document.getElementById('countdown-timer').style.color = '#10b981';
+                } else {
+                    document.getElementById('countdown-timer').innerText = `🔴 Kapandı`;
+                    document.getElementById('countdown-timer').style.color = '#ef4444';
+                }
+
+                renderActions(job);
+                loadProposals(job);
+
+            } catch (error) {
+                console.error("Error", error);
+                document.getElementById('loading').innerText = 'İlan bulunamadı veya silinmiş.';
+            }
+        }
+
+        function getBudgetBadgeClass(budget) {
+            switch (budget) {
+                case 'Very Low': case 'Çok Düşük': return 'badge-very-low';
+                case 'Low': case 'Düşük': return 'badge-low';
+                case 'Medium': case 'Orta': return 'badge-medium';
+                case 'High': case 'Yüksek': return 'badge-high';
+                case 'Very High': case 'Çok Yüksek': return 'badge-very-high';
+                default: return 'badge-medium';
+            }
+        }
+
+        function getBudgetRangeText(budget) {
+            switch (budget) {
+                case 'Very Low': case 'Çok Düşük': return { text: '0 - 1.000 TL', min: 0, max: 1000 };
+                case 'Low': case 'Düşük': return { text: '1.000 - 5.000 TL', min: 1000, max: 5000 };
+                case 'Medium': case 'Orta': return { text: '5.000 - 15.000 TL', min: 5000, max: 15000 };
+                case 'High': case 'Yüksek': return { text: '15.000 - 49.999 TL', min: 15000, max: 49999 };
+                case 'Very High': case 'Çok Yüksek': return { text: '50.000 TL ve üzeri', min: 49999, max: 10000000 }; // High Cap
+                default: return { text: 'Belirtilmemiş', min: 0, max: 0 };
+            }
+        }
+
+        function renderActions(job) {
+            const actionArea = document.getElementById('action-area');
+            const isOwner = currentUser && (currentUser.id === job.employer?.id);
+
+            let html = '';
+
+            if (isOwner) {
+                html = `
+                    <div style="margin-top: 30px; display: flex; gap: 10px;">
+                        <button onclick="window.location.href='job_edit.html?id=${job.id}'" style="background:#f59e0b; color:white; padding:12px 24px; border:none; border-radius:8px; cursor:pointer; font-size:16px;">İlanı Düzenle</button>
+                        <button onclick="deleteJob(${job.id})" style="background:#ef4444; color:white; padding:12px 24px; border:none; border-radius:8px; cursor:pointer; font-size:16px;">İlanı Sil</button>
+                    </div>
+                `;
+            } else {
+                const range = getBudgetRangeText(job.budget);
+                html = `
+                    <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                        <h3 style="color:#334155; margin-bottom:15px;">Teklif Ver</h3>
+                        ${currentUser ?
+                        `<p style="background:#eff6ff; color:#1e40af; padding:10px; border-radius:8px; border:1px solid #bfdbfe; font-size:14px; margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+                                ℹ️ <span>Bu ilan için bütçe aralığı: <strong>${range.text}</strong>. Lütfen teklifinizi buna göre belirleyin.</span>
+                             </p>
+                             <div style="position: relative;">
+                                <textarea id="proposalMsg" rows="4" placeholder="Bu işe neden uygun olduğunuzu yazın... (Kısa notlar alın, AI tamamlasın!)" style="width:100%; padding:10px; padding-bottom: 40px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:10px; font-family: 'Segoe UI', sans-serif; resize: vertical;"></textarea>
+                                <button onclick="generateProposalWithAI()" title="Yapay Zeka ile Teklif Yaz"
+                                    style="position: absolute; bottom: 20px; right: 10px; width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 30px; padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.25); transition: all 0.2s; white-space: nowrap; z-index: 10;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI ile Yaz
+                                </button>
+                             </div>
+                             <input type="number" id="proposalPrice" placeholder="Teklifiniz (TL)" style="width:100%; padding:10px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:10px;">
+                             <button onclick="submitProposal(${job.id}, '${job.budget}')" style="background:#2563eb; color:white; padding:12px 24px; border:none; border-radius:8px; cursor:pointer; width:100%;">Teklifi Gönder</button>`
+                        : `<p style="color:#64748b;">Teklif vermek için <a href="login.html" style="color:#2563eb;">giriş yapmalısınız</a>.</p>`
+                    }
+                    </div>
+                `;
+            }
+
+            actionArea.innerHTML = html;
+
+            // Check if user already has a proposal
+            if (currentUser && !isOwner) {
+                checkExistingProposal(job.id);
+            }
+        }
+
+        async function checkExistingProposal(jobId) {
+            try {
+                const response = await fetch(`${API_URL}/proposals/my-proposal?jobId=${jobId}&freelancerId=${currentUser.id}`);
+                if (response.ok && response.status !== 204) {
+                    const proposal = await response.json();
+
+                    // Add update badge
+                    const actionContainer = document.querySelector('#action-area > div');
+                    const header = actionContainer.querySelector('h3');
+                    header.innerText = 'Teklifini Güncelle';
+                    header.innerHTML += ' <span style="font-size:12px; background:#dcfce7; color:#166534; padding:2px 8px; border-radius:4px; margin-left:10px;">✅ Zaten Teklif Verdiniz</span>';
+
+                    // Pre-fill inputs
+                    const msgInput = document.getElementById('proposalMsg');
+                    const priceInput = document.getElementById('proposalPrice');
+                    const btn = actionContainer.querySelector('button');
+
+                    if (msgInput) msgInput.value = proposal.coverLetter;
+                    if (priceInput) priceInput.value = proposal.price;
+                    if (btn) {
+                        btn.innerText = 'Teklifi Güncelle';
+                        btn.style.background = '#059669'; // Green color for update
+                    }
+                }
+            } catch (e) {
+                console.error("Error checking existing proposal:", e);
+            }
+        }
+
+        async function loadProposals(job) {
+            const container = document.getElementById('proposals-list');
+            try {
+                // Correct Endpoint: GET /api/proposals/{jobId}
+                const response = await fetch(`${API_URL}/proposals/${job.id}`);
+                let proposals = [];
+                if (response.ok) {
+                    proposals = await response.json();
+                }
+
+                container.innerHTML = '';
+                if (proposals.length === 0) {
+                    container.innerHTML = '<p style="color:#94a3b8;">Henüz teklif yok.</p>';
+                    return;
+                }
+
+                // Sort High -> Low Logic
+                proposals.sort((a, b) => b.price - a.price);
+
+                const isOwner = currentUser && (currentUser.id === job.employer?.id);
+
+                proposals.forEach(p => {
+                    const price = p.price + ' TL';
+                    const bidder = isOwner ? (p.freelancer?.username || 'Freelancer') : 'GİZLİ KULLANICI';
+                    const bio = (isOwner && p.freelancer?.bio) ? `<p style="color:#64748b; font-size:13px; font-style:italic; margin:5px 0; white-space: pre-wrap;">${p.freelancer.bio}</p>` : '';
+                    const letter = isOwner ? p.coverLetter : '*** Gizli İçerik ***';
+                    const date = new Date(p.createdAt || Date.now()).toLocaleDateString('tr-TR');
+
+                    const card = document.createElement('div');
+                    card.style.background = '#f8fafc';
+                    card.style.padding = '15px';
+                    card.style.borderRadius = '8px';
+                    card.style.border = '1px solid #e2e8f0';
+
+                    // Status Badge Logic
+                    let statusBadge = '';
+                    if (p.status === 'ACCEPTED') statusBadge = '<span style="color:green; font-weight:bold; margin-left:10px;">✅ KABUL EDİLDİ</span>';
+                    else if (p.status === 'REJECTED') statusBadge = '<span style="color:red; font-weight:bold; margin-left:10px;">❌ REDDEDİLDİ</span>';
+
+                    if (isOwner) {
+                        let actions = '';
+                        if (p.status === 'PENDING' || !p.status) { // Default to PENDING if null
+                            actions = `
+                                <div style="margin-top:15px; display:flex; gap:10px;">
+                                    <button onclick="updateProposal(${p.id}, 'accept')" style="background:#22c55e; color:white; padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:500;">✅ Onayla</button>
+                                    <button onclick="updateProposal(${p.id}, 'reject')" style="background:#ef4444; color:white; padding:8px 16px; border:none; border-radius:6px; cursor:pointer; font-weight:500;">❌ Reddet</button>
+                                </div>
+                            `;
+                        }
+
+                        card.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; font-weight:600; color:#334155;">
+                                <span>${bidder} ${statusBadge}</span>
+                                <span style="color:#2563eb;">${price}</span>
+                            </div>
+                            ${bio}
+                            <p style="color:#64748b; font-size:14px; margin:5px 0;">${letter}</p>
+                            <small style="color:#94a3b8;">${date}</small>
+                            ${actions}
+                        `;
+                    } else {
+                        card.innerHTML = `
+                            <div style="display:flex; justify-content:space-between; font-weight:600; color:#334155;">
+                                <span>${bidder}</span>
+                                <span style="color:#2563eb;">${price}</span>
+                            </div>
+                        `;
+                    }
+                    container.appendChild(card);
+                });
+
+            } catch (e) {
+                console.error(e);
+                container.innerHTML = '<p style="color:red;">Teklifler yüklenemedi.</p>';
+            }
+        }
+
+        function updateProposal(id, type) {
+            const actionText = type === 'accept' ? 'onaylamak' : 'reddetmek';
+
+            showConfirm(`Bu teklifi ${actionText} istediğinize emin misiniz?`, async function () {
+                try {
+                    const response = await fetch(`${API_URL}/proposals/${id}/${type}`, { method: 'PUT' });
+                    if (response.ok) {
+                        showToast("İşlem başarılı.");
+                        // Reload to reflect status changes
+                        setTimeout(() => loadJobDetail(), 500);
+                    } else {
+                        const txt = await response.text();
+                        showToast("Hata: " + txt);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast("Sunucu hatası.");
+                }
+            });
+        }
+
+        async function submitProposal(jobId, jobBudget) {
+            const message = document.getElementById('proposalMsg').value;
+            const priceVal = document.getElementById('proposalPrice').value;
+
+            if (!message || !priceVal) {
+                showToast("Lütfen mesaj ve fiyat giriniz.");
+                return;
+            }
+
+            const price = parseFloat(priceVal);
+
+            // Frontend Validation
+            if (jobBudget) {
+                const range = getBudgetRangeText(jobBudget);
+                if (price <= range.min || price > range.max) {
+                    showToast(`Hata: Teklifiniz ${range.text} aralığında olmalıdır!`);
+                    return;
+                }
+            }
+
+            const proposalBody = {
+                price: parseFloat(price),
+                coverLetter: message
+            };
+
+            try {
+                // Correct Endpoint: POST /api/proposals/{jobId}?freelancerId={uid}
+                const response = await fetch(`${API_URL}/proposals/${jobId}?freelancerId=${currentUser.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(proposalBody)
+                });
+
+                if (response.ok) {
+                    showToast("Teklifiniz başarıyla gönderildi! 🚀");
+                    document.getElementById('proposalMsg').value = '';
+                    document.getElementById('proposalPrice').value = '';
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    const err = await response.text();
+                    showToast("Hata: " + err);
+                }
+            } catch (error) {
+                console.error("Error sending proposal:", error);
+                showToast("Sunucu hatası.");
+            }
+        }
+
+        async function deleteJob(id) {
+            showConfirm("Bu ilanı gerçekten silmek istiyor musunuz?", async function () {
+                try {
+                    const response = await fetch(`${API_URL}/jobs/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        showToast("İlan silindi. Yönlendiriliyorsunuz...");
+                        setTimeout(() => window.location.href = 'index.html', 1500);
+                    } else {
+                        showToast("Silme başarısız: " + await response.text());
+                    }
+                } catch (e) {
+                    showToast("Sunucu hatası");
+                }
+            });
+        }
+
+        async function generateProposalWithAI() {
+            const textarea = document.getElementById('proposalMsg');
+            const jobDesc = document.getElementById('job-desc').innerText;
+            const draft = textarea.value;
+
+            if (!draft || draft.trim().length < 3) {
+                showToast("⚠️ Lütfen AI'a ipucu vermek için birkaç kelime yazın.");
+                textarea.focus();
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="generateProposalWithAI()"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yazıyor...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/ai/generate-proposal`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jobDescription: jobDesc,
+                        userDraft: draft
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Typing effect
+                    let i = 0;
+                    const resultText = data.response;
+                    textarea.value = "";
+                    const interval = setInterval(() => {
+                        textarea.value += resultText.charAt(i);
+                        i++;
+                        if (i > resultText.length) clearInterval(interval);
+                    }, 10);
+                } else {
+                    showToast("Hata: AI yanıt veremedi.");
+                }
+            } catch (e) {
+                showToast("Sunucu hatası.");
+            } finally {
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        checkAuth();
+        loadJobDetail();
+    </script>
+</body>
+
+</html>

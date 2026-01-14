@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Feedback</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <div style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="section-title">Gelen Görüşler</h2>
+            <a href="admin_dashboard.html" class="btn-cancel" style="padding:10px 20px; text-decoration:none;">Panele
+                Dön</a>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr; gap:30px;">
+            <!-- Pending Feedbacks -->
+            <div>
+                <h3
+                    style="color:#d97706; margin-bottom:15px; font-size:18px; border-bottom:2px solid #d97706; padding-bottom:5px; display:inline-block;">
+                    Bekleyen Görüşler</h3>
+                <div id="pending-list" style="display:flex; flex-direction:column; gap:20px;">
+                    <p>Yükleniyor...</p>
+                </div>
+            </div>
+
+            <!-- Replied Feedbacks -->
+            <div>
+                <h3
+                    style="color:#16a34a; margin-bottom:15px; font-size:18px; border-bottom:2px solid #16a34a; padding-bottom:5px; display:inline-block;">
+                    Yanıtlanan Görüşler</h3>
+                <div id="replied-list" style="display:flex; flex-direction:column; gap:20px; opacity: 0.8;">
+                    <p>Yükleniyor...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="ui.js"></script>
+    <!-- Reply Modal -->
+    <div id="replyModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width: 700px; width: 90%;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 class="modal-title">Yanıt Oluştur</h3>
+                <span style="cursor:pointer; font-size:20px;" onclick="closeReplyModal()">&times;</span>
+            </div>
+
+            <!-- Original Message Context -->
+            <div
+                style="background:#f8fafc; padding:10px; border-radius:6px; margin-bottom:15px; border:1px solid #e2e8f0;">
+                <label style="font-size:12px; color:#64748b; font-weight:bold;">KULLANICI MESAJI</label>
+                <p id="modalUserMessage" style="font-style:italic; color:#334155; margin:5px 0; font-size:14px;">...</p>
+            </div>
+
+            <!-- Admin Notes -->
+            <div style="margin-bottom:15px;">
+                <label style="font-weight:bold; font-size:14px;">Sizin Notlarınız / Talimatlarınız</label>
+                <textarea id="adminNotes" class="modal-input" rows="3"
+                    placeholder="Örn: Teşekkür et, sorunun haftaya çözüleceğini söyle."
+                    style="margin-top:5px; font-family:inherit; width: 100%;"></textarea>
+                <div style="text-align: right; margin-top: 8px;">
+                    <button class="btn-action"
+                        style="background:#8b5cf6; width:auto; padding: 8px 16px; display: inline-block;"
+                        onclick="generateSmartReply()">✨ AI ile Yaz</button>
+                </div>
+            </div>
+
+            <!-- Final Draft -->
+            <div style="margin-bottom:20px;">
+                <label style="font-weight:bold; font-size:14px;">Taslak Yanıt (Düzenlenebilir)</label>
+                <textarea id="finalReply" rows="6" class="modal-input"
+                    style="margin-top:5px; font-family:inherit;"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeReplyModal()">Vazgeç</button>
+                <button class="modal-btn btn-confirm" onclick="sendReply()">Gönder 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+
+        let currentFeedbackMessage = "";
+        let currentFeedbackId = null;
+
+        async function loadFeedbacks() {
+            try {
+                const response = await fetch(`${API_URL}/feedbacks`);
+                const feedbacks = await response.json();
+
+                const pendingContainer = document.getElementById('pending-list');
+                const repliedContainer = document.getElementById('replied-list');
+
+                pendingContainer.innerHTML = '';
+                repliedContainer.innerHTML = '';
+
+                if (feedbacks.length === 0) {
+                    pendingContainer.innerHTML = '<p>Henüz bir görüş yok.</p>';
+                    return;
+                }
+
+                // Sort: Newest First
+                feedbacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                feedbacks.forEach(fb => {
+                    const card = document.createElement('div');
+                    card.style.background = 'white';
+                    card.style.padding = '20px';
+                    card.style.borderRadius = '12px';
+                    card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
+
+                    const date = new Date(fb.createdAt).toLocaleString('tr-TR');
+                    // Escape quotes for onclick
+                    const safeMessage = (fb.message || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    const isReplied = fb.replied === true;
+
+                    // Header Color
+                    const headerColor = isReplied ? '#16a34a' : '#d97706';
+                    const icon = isReplied ? '<i class="fa-solid fa-check-circle"></i>' : '<i class="fa-regular fa-clock"></i>';
+
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+                            <span style="font-weight:bold; color:${headerColor}; display:flex; align-items:center; gap:5px;">
+                                ${icon} User: ${fb.user?.username || 'Misafir'}
+                            </span>
+                            <span style="color:#94a3b8; font-size:13px;">${date}</span>
+                        </div>
+                        <p style="color:#334155; line-height:1.6; margin-bottom:15px; font-size:15px;">${fb.message}</p>
+                        ${isReplied && fb.reply ?
+                            `<div style="background:#f0fdf4; border-left:4px solid #16a34a; padding:10px; margin-bottom:15px; border-radius:4px;">
+                                <small style="display:block; font-weight:bold; color:#166534; margin-bottom:5px;">Yönetici Yanıtı:</small>
+                                <p style="margin:0; color:#15803d; font-size:14px;">${fb.reply}</p>
+                             </div>`
+                            : ''}
+                        ${!isReplied ?
+                            `<button class="btn-action" style="width:auto; padding:8px 16px; font-size:13px;" onclick="openReplyModal('${safeMessage}', ${fb.id})">↩️ Yanıtla</button>`
+                            : `<span style="font-size:12px; color:#16a34a; font-weight:bold; background:#dcfce7; padding:4px 10px; border-radius:20px;">Yanıtlandı</span>`}
+                    `;
+
+                    if (isReplied) {
+                        repliedContainer.appendChild(card);
+                    } else {
+                        pendingContainer.appendChild(card);
+                    }
+                });
+
+                if (pendingContainer.children.length === 0) pendingContainer.innerHTML = '<p style="color:#94a3b8; font-style:italic;">Bekleyen görüş yok.</p>';
+                if (repliedContainer.children.length === 0) repliedContainer.innerHTML = '<p style="color:#94a3b8; font-style:italic;">Henüz yanıtlanan görüş yok.</p>';
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('pending-list').innerHTML = '<p style="color:red;">Hata oluştu.</p>';
+            }
+        }
+
+        function openReplyModal(message, feedbackId) {
+            currentFeedbackMessage = message;
+            currentFeedbackId = feedbackId;
+            document.getElementById('modalUserMessage').innerText = message;
+            document.getElementById('adminNotes').value = '';
+            document.getElementById('finalReply').value = '';
+            document.getElementById('replyModal').style.display = 'flex';
+        }
+
+        function closeReplyModal() {
+            document.getElementById('replyModal').style.display = 'none';
+        }
+
+        async function generateSmartReply() {
+            const notes = document.getElementById('adminNotes').value;
+            if (!notes) {
+                showToast("Lütfen önce kısa bir not veya talimat yazın.");
+                return;
+            }
+
+            showToast("AI yanıtı hazırlıyor... ⏳", "info");
+
+            const prompt = `Aşağıdaki kullanıcı mesajına, yönetici notlarına dayanarak RESMİ, NAZİK ve PROFESYONEL bir e-posta/mesaj cevabı yaz.
+            
+            Kullanıcı Mesajı: "${currentFeedbackMessage}"
+            Yönetici Notları/Talimatı: "${notes}"
+            
+            Kurallar:
+            1. Sadece cevap metnini yaz (Giriş ve bitiş dahil).
+            2. Markdown kullanma (Yıldız *, kare # vs. kullanma). Düz metin olsun.
+            3. Türkçe yaz.`;
+
+            try {
+                const response = await fetch('/api/ai/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: prompt })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    let aiText = data.response;
+                    aiText = aiText.replace(/\*\*/g, '').replace(/\*/g, '-').replace(/#/g, '');
+                    document.getElementById('finalReply').value = aiText.trim();
+                } else {
+                    showToast("AI servisine ulaşılamadı.");
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("Hata oluştu.");
+            }
+        }
+
+        async function sendReply() {
+            const final = document.getElementById('finalReply').value;
+            if (!final) {
+                showToast("Boş yanıt gönderilemez.");
+                return;
+            }
+
+            if (!currentFeedbackId) {
+                showToast("Hata: Feedback ID kayıp.");
+                return;
+            }
+
+            try {
+                showToast("Yanıt gönderiliyor...", "info");
+                const response = await fetch('/api/admin/feedback/reply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        feedbackId: currentFeedbackId,
+                        reply: final
+                    })
+                });
+
+                if (response.ok) {
+                    showToast("Yanıt başarıyla gönderildi! ✅", "success");
+                    closeReplyModal();
+                    loadFeedbacks(); // Refresh list to move item to replied section
+                } else {
+                    const txt = await response.text();
+                    showToast("Hata: " + txt);
+                }
+            } catch (e) {
+                console.error(e);
+                showToast("Sunucu hatası.");
+            }
+        }
+
+        loadFeedbacks();
+    </script>
+</body>
+
+</html>

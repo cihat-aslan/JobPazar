@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - İletişim</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1000px;
+            margin: 40px auto;
+        }
+
+        .contact-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #475569;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .social-link:hover {
+            background: #f1f5f9;
+            color: #2563eb;
+        }
+    </style>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body class="dashboard-body" style="display: block;">
+    <div class="dashboard-container">
+        <div class="dashboard-container">
+            <!-- New Navbar Structure -->
+            <nav class="navbar"
+                style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; border-radius: 12px;">
+                <div style="display: flex; align-items: center; gap: 30px;">
+                    <a href="index.html" class="logo"
+                        style="text-decoration: none; font-size: 24px; font-weight: 800; color: #2563eb; font-family: 'Segoe UI', sans-serif; line-height: 1; display: flex; align-items: center;">JobPazar</a>
+
+                    <div class="nav-links" style="display: flex; align-items: center;">
+                        <a href="about.html">Hakkımızda</a>
+                        <a href="contact.html" style="color:#2563eb;">İletişim</a>
+                    </div>
+                </div>
+
+                <div id="auth-section" style="display: flex; align-items: center; gap: 20px;">
+                    <!-- Content injected by JS -->
+                </div>
+            </nav>
+
+            <div class="contact-grid">
+                <!-- Social Media & Info -->
+                <div class="contact-card">
+                    <h2 class="section-title">İletişim Kanalları</h2>
+                    <p style="color:#64748b; margin-bottom:20px;">Bizi sosyal medyadan takip edin veya doğrudan ulaşın.
+                    </p>
+
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <a href="#" class="social-link"><span>📷</span> Instagram: @jobpazar</a>
+                        <a href="#" class="social-link"><span>🐦</span> Twitter: @jobpazar</a>
+                        <a href="#" class="social-link"><span>💼</span> LinkedIn: JobPazar</a>
+                        <a href="#" class="social-link"><span>📧</span> E-posta: info@jobpazar.com</a>
+                    </div>
+                </div>
+
+                <!-- Feedback Form -->
+                <div class="contact-card">
+                    <h2 class="section-title">Soru ve Görüşleriniz</h2>
+                    <p style="color:#64748b; margin-bottom:20px;">Bizimle paylaşmak istediğiniz bir şey mi var?</p>
+
+                    <div id="form-area">
+                        <div style="position: relative;">
+                            <textarea id="feedbackMsg" rows="5"
+                                placeholder="Mesajınız... (Kısa notlar alın, AI sizin için düzenlesin)"
+                                style="width:100%; padding:15px; padding-bottom:40px; border:1px solid #e2e8f0; border-radius:8px; margin-bottom:15px; font-family:'Inter', sans-serif; resize: vertical;"></textarea>
+                            <button onclick="refineFeedbackWithAI()" title="Yapay Zeka ile Düzenle"
+                                style="position: absolute; bottom: 30px; right: 10px; width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 30px; padding: 4px 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px rgba(124, 58, 237, 0.25); transition: all 0.2s; white-space: nowrap; z-index: 10;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI ile Düzenle
+                            </button>
+                        </div>
+                        <button onclick="sendFeedback()"
+                            style="background:#2563eb; width: 100%; padding: 12px; border-radius: 8px; color: white; border: none; cursor: pointer; font-size: 16px;">Gönder</button>
+                    </div>
+
+                    <div id="login-warning"
+                        style="display:none; text-align:center; padding:20px; background:#eff6ff; border-radius:8px; color:#1e40af;">
+                        Görüş bildirmek için lütfen <a href="login.html" style="font-weight:bold; color:#2563eb;">giriş
+                            yapın</a>.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="ui.js"></script>
+        <script>
+            const API_URL = '/api';
+            let currentUser = null;
+
+            function checkAuth() {
+                const userStr = localStorage.getItem('user');
+                const authSection = document.getElementById('auth-section');
+
+                if (userStr) {
+                    currentUser = JSON.parse(userStr);
+                    document.getElementById('form-area').style.display = 'block';
+                    document.getElementById('login-warning').style.display = 'none';
+
+                    // Navbar Auth
+                    authSection.innerHTML = `
+                    <div class="dropdown">
+                        <div style="display:flex; align-items:center; gap:10px; cursor:pointer; padding: 5px;">
+                            <span style="color:#334155; font-weight:600; font-size:14px;">Merhaba, ${currentUser.username}</span>
+                            <div class="profile-icon">
+                                ${currentUser.username.charAt(0).toUpperCase()}
+                            </div>
+                        </div>
+                        <div class="dropdown-content">
+                            <a href="profile.html?section=info"><i class="fa-solid fa-user-pen"></i> Bilgilerim</a>
+                            <a href="profile.html?section=jobs"><i class="fa-solid fa-briefcase"></i> İlanlarım</a>
+                            <a href="profile.html?section=proposals"><i class="fa-solid fa-paper-plane"></i> Tekliflerim</a>
+                            <a href="profile.html?section=notifications"><i class="fa-solid fa-bell"></i> Bildirimler</a>
+                            <a href="#" onclick="logout()" style="color:#ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</a>
+                        </div>
+                    </div>
+                `;
+                } else {
+                    document.getElementById('form-area').style.display = 'none';
+                    document.getElementById('login-warning').style.display = 'block';
+
+                    // Navbar Guest
+                    authSection.innerHTML = `
+                    <span style="color: #666; font-size: 14px;">Misafir Görünümü</span>
+                    <a href="login.html" style="text-decoration: none; color: #2563eb; font-weight: 600;">Giriş Yap</a>
+                    <a href="login.html" onclick="localStorage.setItem('openRegister', 'true')" style="text-decoration: none; color: #2563eb; font-weight: 600;">Üye Ol</a>
+                `;
+                }
+            }
+
+            function logout() {
+                localStorage.removeItem('user');
+                window.location.href = 'index.html';
+            }
+
+            async function sendFeedback() {
+                const msg = document.getElementById('feedbackMsg').value;
+                if (!msg.trim()) {
+                    showToast("Lütfen bir mesaj yazın.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${API_URL}/feedbacks`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: msg, userId: currentUser.id })
+                    });
+
+                    if (response.ok) {
+                        showToast("Görüşünüz iletildi! Teşekkürler.");
+                        document.getElementById('feedbackMsg').value = '';
+                    } else {
+                        showToast("Hata oluştu.");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast("Sunucu hatası.");
+                }
+            }
+
+            async function refineFeedbackWithAI() {
+                const textarea = document.getElementById('feedbackMsg');
+                const draft = textarea.value;
+
+                if (!draft || draft.trim().length < 3) {
+                    showToast("⚠️ Lütfen AI'a ipucu vermek için birkaç kelime yazın.");
+                    textarea.focus();
+                    return;
+                }
+
+                const btn = document.querySelector('button[onclick="refineFeedbackWithAI()"]');
+                const originalContent = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yazıyor...';
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch(`${API_URL}/ai/refine-feedback`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: draft })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+
+                        // Typing effect
+                        let i = 0;
+                        const resultText = data.response;
+                        textarea.value = "";
+                        const interval = setInterval(() => {
+                            textarea.value += resultText.charAt(i);
+                            i++;
+                            if (i > resultText.length) clearInterval(interval);
+                        }, 10);
+                    } else {
+                        // Handle errors (e.g. 429 Quota Exceeded)
+                        if (response.status === 429) {
+                            showToast("⚠️ AI Kotaları Doldu. Lütfen manuel düzenleyiniz.");
+                        } else {
+                            const err = await response.json().catch(() => ({}));
+                            showToast("Hata: " + (err.error || response.statusText || "AI servisine ulaşılamadı."));
+                        }
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showToast("Sunucu hatası veya bağlantı sorunu.");
+                } finally {
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                }
+            }
+
+            checkAuth();
+        </script>
+</body>
+
+</html>

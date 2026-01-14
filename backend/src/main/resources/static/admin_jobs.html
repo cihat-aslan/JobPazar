@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - İlan Denetimi</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-back {
+            background-color: #64748b;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .job-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .job-table th,
+        .job-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .job-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-OPEN {
+            background-color: #e0f2fe;
+            color: #0284c7;
+        }
+
+        .status-IN_PROGRESS {
+            background-color: #ffedd5;
+            color: #ea580c;
+        }
+
+        .status-COMPLETED {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+
+    <div class="container">
+        <div class="header">
+            <h2 class="section-title" style="margin:0">İlan Denetimi</h2>
+            <select id="status-filter" style="padding:10px; border-radius:8px; border:1px solid #ccc;">
+                <option value="ALL">Tüm Durumlar</option>
+                <option value="OPEN">Yayında</option>
+                <option value="IN_PROGRESS">Devam Ediyor</option>
+                <option value="COMPLETED">Tamamlandı</option>
+            </select>
+            <a href="admin_dashboard.html" class="btn-back">← Panele Dön</a>
+        </div>
+
+        <table class="job-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Başlık</th>
+                    <th>İşveren</th>
+                    <th>Bütçe</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="job-list-body">
+                <tr>
+                    <td colspan="6" style="text-align:center; color:#999;">Yükleniyor...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="ui.js"></script>
+    <script>
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        const API_URL = '/api/admin';
+
+        // Global variable to store jobs
+        let globalJobs = [];
+
+        async function loadJobs() {
+            try {
+                const response = await fetch(`${API_URL}/jobs`);
+                globalJobs = await response.json();
+
+                renderJobs(globalJobs);
+
+                // Re-attach listener to avoid duplicates
+                const filter = document.getElementById('status-filter');
+                const newFilter = filter.cloneNode(true);
+                filter.parentNode.replaceChild(newFilter, filter);
+                newFilter.addEventListener('change', () => filterJobs(globalJobs));
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function filterJobs(jobs) {
+            const statusValue = document.getElementById('status-filter').value;
+            const filtered = jobs.filter(job => {
+                return statusValue === 'ALL' || job.status === statusValue;
+            });
+            renderJobs(filtered);
+        }
+
+        const statusLabels = {
+            'OPEN': 'Yayında',
+            'IN_PROGRESS': 'Devam Ediyor',
+            'COMPLETED': 'Tamamlandı'
+        };
+
+        function renderJobs(jobs) {
+            const tbody = document.getElementById('job-list-body');
+            tbody.innerHTML = '';
+
+            if (jobs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">İlan bulunamadı.</td></tr>';
+                return;
+            }
+
+            jobs.forEach(job => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>#${job.id}</td>
+                    <td><span style="font-weight:500">${job.title}</span></td>
+                    <td>${job.employer ? job.employer.username : 'Bilinmiyor'}</td>
+                    <td>${job.budget}</td>
+                    <td><span class="status-badge status-${job.status}">${statusLabels[job.status] || job.status}</span></td>
+                    <td>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-delete" style="background-color:#3b82f6; width:auto; padding:6px 12px;" onclick="goToEditPage(${job.id})">Düzenle</button>
+                            <button class="btn-delete" style="width:auto; padding:6px 12px;" onclick="deleteJob(${job.id})">Kaldır</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function goToEditPage(id) {
+            window.location.href = `admin_edit_job.html?id=${id}`;
+        }
+
+        function deleteJob(id) {
+            showConfirm('Bu ilanı yayından kaldırmak istediğinize emin misiniz?', async function () {
+                try {
+                    const response = await fetch(`${API_URL}/jobs/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (response.ok) {
+                        showToast('İlan yayından kaldırıldı.', 'success');
+                        loadJobs(); // Refresh list
+                    } else {
+                        showToast('Hata: ' + await response.text());
+                    }
+                } catch (error) {
+                    console.error("Error", error);
+                    showToast('Sunucu hatası.');
+                }
+            });
+        }
+
+        loadJobs();
+    </script>
+</body>
+
+</html>

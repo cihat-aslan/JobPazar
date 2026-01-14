@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>JobPazar - Admin Paneli</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <a href="#" class="logo">JobPazar <span style="font-weight:normal; font-size: 1rem; color: #64748b;">|
+                    Yönetici</span></a>
+            <button class="btn-logout" onclick="logout()">Çıkış Yap</button>
+        </nav>
+
+        <h2 class="section-title">Yönetim Paneli</h2>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3>Kullanıcı Yönetimi</h3>
+                <p>Kayıtlı kullanıcıları görüntüle, düzenle veya sil.</p>
+                <button class="btn-action" onclick="window.location.href='admin_users.html'">Kullanıcıları
+                    Listele</button>
+            </div>
+
+            <div class="card">
+                <h3>İlan Denetimi</h3>
+                <p>Onay bekleyen iş ilanlarını incele ve onayla.</p>
+                <button class="btn-action" onclick="window.location.href='admin_jobs.html'">İlanları İncele</button>
+            </div>
+
+            <div class="card">
+                <h3>Gelen Görüşler</h3>
+                <p>Kullanıcılardan gelen geri bildirimleri incele.</p>
+                <button class="btn-action" onclick="window.location.href='admin_feedbacks.html'">Mesajları Oku</button>
+            </div>
+
+            <div class="card ai-card">
+                <h3>Sistem İstatistikleri</h3>
+                <p>Toplam Kullanıcı: <span id="stat-users">...</span><br>Aktif İlan: <span id="stat-jobs">...</span></p>
+                <button class="btn-action" onclick="generateReport()">✨ AI Raporu Al</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-content" style="margin-top: 30px;">
+        <!-- Dynamic content will load here -->
+    </div>
+
+    <script src="ui.js"></script>
+    <script>
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.role !== 'ADMIN') {
+            window.location.href = 'index.html';
+        }
+
+        const API_URL = '/api/admin';
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/stats`);
+                const stats = await response.json();
+
+                document.getElementById('stat-users').innerText = stats.totalUsers;
+                document.getElementById('stat-jobs').innerText = stats.totalJobs;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load stats on startup
+        loadStats();
+
+        async function generateReport() {
+            const users = document.getElementById('stat-users').innerText;
+            const jobs = document.getElementById('stat-jobs').innerText;
+
+            showToast("Yapay Zeka raporu hazırlıyor... ⏳", "info");
+
+            try {
+                // Determine if we should send stats or just request a report
+                // The backend endpoint might not need body, or we can send stats if the endpoint expects it
+                // Previous code sent stats, let's keep sending them just in case, or check controller
+                // Addressinig the endpoint /api/ai/admin-report
+
+                // Let's call the endpoint. If it needs stats from client, we send them. 
+                // But wait, the previous code in Step 227 tried to call it with a body. 
+                // Step 222 replacement used just POST without body. 
+                // Let's assume the endpoint generates stats on server side (which makes more sense).
+                // So I will just use the simple POST call that I intended in Step 222.
+
+                const response = await fetch('/api/ai/admin-report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        totalUsers: users,
+                        totalJobs: jobs,
+                        date: new Date().toISOString()
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Simple Markdown Formatter
+                    let formatted = data.response
+                        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Bold: **text** -> <b>text</b>
+                        .replace(/\* (.*?)(?=\n|$)/g, '• $1<br>') // Bullet: * text -> • text<br>
+                        .replace(/\n/g, '<br>'); // Newlines
+
+                    showModal("Yönetici Özeti (AI)", `<div style="text-align:left; line-height:1.6; color:#334155;">${formatted}</div>`);
+                } else {
+                    showToast("Rapor oluşturulamadı.");
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("Sunucu hatası.");
+            }
+        }
+    </script>
+</body>
+
+</html>

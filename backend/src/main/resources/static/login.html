@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobPazar - Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container" id="login-form">
+        <h1>Giriş Yap</h1>
+        <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label>Kullanıcı Adı</label>
+                <input type="text" id="login-username" required>
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button type="submit">Giriş Yap</button>
+        </form>
+        <div class="switch-link">
+            Hesabın yok mu? <a href="#" onclick="toggleForms()">Kayıt Ol</a>
+        </div>
+    </div>
+
+    <div class="container" id="register-form" style="display: none;">
+        <h1>Kayıt Ol</h1>
+        <form onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label>Kullanıcı Adı</label>
+                <input type="text" id="reg-username" required>
+            </div>
+            <div class="form-group">
+                <label>E-posta</label>
+                <input type="email" id="reg-email" required>
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="reg-password" required>
+            </div>
+            <button type="submit">Kayıt Ol</button>
+        </form>
+        <div class="switch-link">
+            Zaten hesabın var mı? <a href="#" onclick="toggleForms()">Giriş Yap</a>
+        </div>
+    </div>
+
+    <!-- UI Helpers -->
+    <script src="ui.js"></script>
+
+    <script>
+        function toggleForms() {
+            var login = document.getElementById('login-form');
+            var register = document.getElementById('register-form');
+            if (login.style.display === 'none') {
+                login.style.display = 'block';
+                register.style.display = 'none';
+            } else {
+                login.style.display = 'none';
+                register.style.display = 'block';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Save session
+                    localStorage.setItem('user', JSON.stringify(data));
+
+                    if (data.role === 'ADMIN') {
+                        window.location.href = 'admin_dashboard.html';
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    showToast('Giriş başarısız!');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Hata oluştu');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+
+                if (response.ok) {
+                    showToast('Kayıt başarılı! Şimdi giriş yapabilirsiniz. 🎉');
+                    toggleForms();
+                } else {
+                    const errorText = await response.text();
+                    showToast('Kayıt başarısız: ' + errorText);
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Hata oluştu');
+            }
+        }
+
+        // Check for auto-open register
+        if (localStorage.getItem('openRegister') === 'true') {
+            toggleForms();
+            localStorage.removeItem('openRegister');
+        }
+    </script>
+</body>
+
+</html>
