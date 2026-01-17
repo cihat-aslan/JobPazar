@@ -40,15 +40,15 @@ public class AuthController {
         // Send welcome email
         try {
             if (user.getEmail() != null && !user.getEmail().isEmpty()) {
-                String subject = "Welcome to JobPazar!";
-                String body = "Dear " + user.getUsername() + ",\n\n" +
-                        "Welcome to JobPazar - Your Freelancer Marketplace!\n\n" +
-                        "You have successfully registered. You can now:\n" +
-                        "- Post jobs as an employer\n" +
-                        "- Apply for jobs as a freelancer\n" +
-                        "- Connect with talented professionals\n\n" +
-                        "Best regards,\n" +
-                        "JobPazar Team";
+                String subject = "JobPazar'a Hoş Geldiniz!";
+                String body = "Sayın " + user.getUsername() + ",\n\n" +
+                        "JobPazar - Freelancer Pazarına hoş geldiniz!\n\n" +
+                        "Başarıyla kayıt oldunuz. Artık şunları yapabilirsiniz:\n" +
+                        "- İşveren olarak iş ilanı yayınlayın\n" +
+                        "- Freelancer olarak işlere başvurun\n" +
+                        "- Yetenekli profesyonellerle bağlantı kurun\n\n" +
+                        "İyi günler dileriz,\n" +
+                        "JobPazar Ekibi";
                 mailService.sendEmail(user.getEmail(), subject, body);
             }
         } catch (Exception e) {
