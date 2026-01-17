@@ -2,6 +2,7 @@ package com.jobpazar.backend.controller;
 
 import com.jobpazar.backend.entity.User;
 import com.jobpazar.backend.repository.UserRepository;
+import com.jobpazar.backend.service.IMailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,9 @@ public class AuthController {
     @Autowired
     private com.jobpazar.backend.repository.ProposalRepository proposalRepository;
 
+    @Autowired
+    private IMailService mailService;
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
@@ -32,6 +36,25 @@ public class AuthController {
         }
 
         userRepository.save(user);
+
+        // Send welcome email
+        try {
+            if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+                String subject = "Welcome to JobPazar!";
+                String body = "Dear " + user.getUsername() + ",\n\n" +
+                        "Welcome to JobPazar - Your Freelancer Marketplace!\n\n" +
+                        "You have successfully registered. You can now:\n" +
+                        "- Post jobs as an employer\n" +
+                        "- Apply for jobs as a freelancer\n" +
+                        "- Connect with talented professionals\n\n" +
+                        "Best regards,\n" +
+                        "JobPazar Team";
+                mailService.sendEmail(user.getEmail(), subject, body);
+            }
+        } catch (Exception e) {
+            System.err.println("Welcome email failed: " + e.getMessage());
+        }
+
         return ResponseEntity.ok("User registered successfully");
     }
 

@@ -45,3 +45,8 @@ Thumbs.db
 *.mobileprovision
 *.orig.*
 web-build/
+
+# Python
+mail-service/venv/
+__pycache__/
+*.pyc
