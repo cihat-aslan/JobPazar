@@ -33,25 +33,55 @@ jobs:
           target: "/home/ec2-user/app"
           strip_components: 2
 
-      - name: Deploy on EC2
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Copy Mail Service to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          source: "mail-service/main.py,mail-service/requirements.txt"
+          target: "/home/ec2-user"
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          MAIL_USER: ${{ secrets.MAIL_USER }}
+          MAIL_PASS: ${{ secrets.MAIL_PASS }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: MAIL_USER,MAIL_PASS
           script: |
-            # Kill existing process on port 8080
+            # Kill existing processes
             sudo fuser -k -9 8080/tcp || true
+            sudo fuser -k -9 8000/tcp || true
             
-            # Wait for port to be released
+            # Wait for ports to be released
             sleep 5
             
-            # Start new JAR with Gemini API key
+            # Start Spring Boot JAR
             cd /home/ec2-user/app
             nohup java -jar backend-0.0.1-SNAPSHOT.jar \
               --gemini.api.key=${{ secrets.GEMINI_API_KEY }} \
               > app.log 2>&1 &
             
+            # Setup and start Python mail service
+            cd /home/ec2-user/mail-service
+            
+            # Create .env file
+            echo "MAIL_HOST=smtp.gmail.com" > .env
+            echo "MAIL_PORT=587" >> .env
+            echo "MAIL_USER=${MAIL_USER}" >> .env
+            echo "MAIL_PASS=${MAIL_PASS}" >> .env
+            
+            # Setup Python environment
+            python3 -m venv venv 2>/dev/null || true
+            source venv/bin/activate
+            pip install -r requirements.txt -q
+            nohup uvicorn main:app --host 0.0.0.0 --port 8000 > mail.log 2>&1 &
+            
             # Wait and verify
             sleep 10
             curl -s http://localhost:8080 || echo "App starting..."
+            curl -s http://localhost:8000 || echo "Mail service starting..."
